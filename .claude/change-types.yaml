@@ -1,0 +1,188 @@
+# Tipos de Mudanças Suportadas
+
+# Cada tipo de mudança tem:
+# - um prefixo para nomenclatura
+# - descrição
+# - templates recomendados
+# - checklist de completude
+
+types:
+  feature:
+    name: "Nova Funcionalidade"
+    description: "Uma nova capacidade ou comportamento adicionado ao sistema"
+    prefix: "feature"
+    example: "feature-audit-logging"
+    templates:
+      - proposal
+      - design
+      - tasks
+    must_have:
+      - API docs updated
+      - Tests covering new behavior
+      - README updated
+      - Security review (if applicable)
+    commit_prefix: "feat"
+
+  bugfix:
+    name: "Correção de Bug"
+    description: "Fix de comportamento incorreto"
+    prefix: "bugfix"
+    example: "bugfix-rate-limit-persistence"
+    templates:
+      - proposal
+      - design
+      - tasks
+    must_have:
+      - Regression test (não volte a quebrar)
+      - Root cause documented
+      - Design explaining the fix
+    commit_prefix: "fix"
+
+  security:
+    name: "Patch de Segurança"
+    description: "Remediação de vulnerabilidade ou fortalecimento de segurança"
+    prefix: "security"
+    example: "security-jwt-hardening"
+    templates:
+      - proposal
+      - design
+      - tasks
+    must_have:
+      - Security review completed
+      - Threat model documented
+      - Mitigation explained
+      - SECURITY.md updated
+      - Tests covering the vulnerability
+    commit_prefix: "security"
+
+  refactor:
+    name: "Refatoração Técnica"
+    description: "Melhoria de código sem mudança de comportamento"
+    prefix: "refactor"
+    example: "refactor-error-handling"
+    templates:
+      - proposal
+      - design
+      - tasks
+    must_have:
+      - All existing tests still pass
+      - Design explaining the change
+      - No new features or bug fixes mixed in
+    commit_prefix: "refactor"
+
+  perf:
+    name: "Otimização de Performance"
+    description: "Melhoria de velocidade, uso de memória, ou recursos"
+    prefix: "perf"
+    example: "perf-query-optimization"
+    templates:
+      - proposal
+      - design
+      - tasks
+    must_have:
+      - Before/after benchmarks documented
+      - Trade-offs explained (if any)
+      - Design explaining the optimization
+      - Regression tests
+    commit_prefix: "perf"
+
+  docs:
+    name: "Documentação"
+    description: "Melhorias em documentação, sem mudanças de código"
+    prefix: "docs"
+    example: "docs-api-guide"
+    templates:
+      - proposal
+      - tasks
+    must_have:
+      - No code changes (only docs, comments, examples)
+      - Links/references verified
+    commit_prefix: "docs"
+
+  chore:
+    name: "Tarefas Administrativas"
+    description: "Deps, configuração, CI/CD, tooling — não afeta comportamento"
+    prefix: "chore"
+    example: "chore-upgrade-python-3.13"
+    templates:
+      - proposal
+      - tasks
+    must_have:
+      - All tests still pass
+      - Rationale for upgrade/change documented
+    commit_prefix: "chore"
+
+# Convenções de nomenclatura
+naming_convention:
+  format: "{date}-{type}-{slug}"
+  date_format: "YYYY-MM-DD"
+  slug_format: "lowercase-with-hyphens"
+  example: "2026-08-14-feature-audit-logging"
+
+# Commit message conventions
+commit_conventions:
+  format: "{prefix}: {message}"
+  prefix_values:
+    - feat
+    - fix
+    - security
+    - refactor
+    - perf
+    - docs
+    - test
+    - chore
+    - ci
+  example: "feat: add audit logging middleware"
+  body_example: |
+    - Track all authentication events with client IP
+    - Log to structured JSON format
+    - Include in trace correlation
+
+    Fixes #42
+    Co-Authored-By: Claude <noreply@anthropic.com>
+
+# Branch naming conventions
+branch_conventions:
+  format: "{type}/{slug}"
+  example: "feature/audit-logging"
+  do_not_use:
+    - master (use main)
+    - wip (use feature/*, bugfix/*, etc)
+    - random names
+
+# PR conventions
+pr_conventions:
+  template: |
+    ## Mudança
+    Breve descrição do que foi feito.
+
+    ## Requisitos Atendidos
+    - [ ] Todos os requisitos de proposal.md atendidos
+    - [ ] Testes passando (81 tests)
+    - [ ] Documentação atualizada
+    - [ ] Code review completo
+
+    ## Arquivos Principais Alterados
+    - `app/module/file.py`
+    - `tests/test_file.py`
+    - `openspec/changes/active/DATE-TYPE-SLUG/`
+
+    ## Como Testar
+    ```bash
+    docker compose run --rm app-test pytest -v
+    ```
+
+    ## Notas Adicionais
+    [Se houver algo relevante]
+  state: "draft"  # Always start as draft
+  allow_merge_when: "approved and all-checks-pass"
+
+# Archive conventions
+archive_conventions:
+  location: "openspec/changes/archive/"
+  when: "After merge to main"
+  structure:
+    - proposal.md
+    - design.md
+    - tasks.md
+    - specs/  (if applicable)

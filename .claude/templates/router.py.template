@@ -1,0 +1,179 @@
+"""Template: FastAPI Router com Boas Práticas.
+
+Copiar este arquivo para criar novo router seguindo padrões de qualidade.
+"""
+
+from typing import Optional
+
+from fastapi import APIRouter, Depends, Query, status
+from sqlalchemy.orm import Session
+
+from app.api.deps import get_current_user
+from app.infrastructure.database import get_db
+from app.models.user import User
+from app.schemas.{{model_name_lower}} import (
+    {{ModelNamePascal}}Create,
+    {{ModelNamePascal}}Out,
+    {{ModelNamePascal}}Update,
+)
+from app.services import {{model_name_lower}}_service
+
+router = APIRouter(
+    prefix="/api/v1/{{model_name_plural_lower}}",
+    tags=["{{model_name_plural_lower}}"],
+)
+
+
+@router.post(
+    "",
+    response_model={{ModelNamePascal}}Out,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_{{model_name_lower}}(
+    payload: {{ModelNamePascal}}Create,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> {{ModelNamePascal}}Out:
+    """Create a new {{model_name_lower}}.
+
+    Args:
+        payload: {{model_name_lower}} creation request data.
+        db: Database session.
+        current_user: Authenticated user.
+
+    Returns:
+        Created {{model_name_lower}} as schema object.
+
+    Raises:
+        ConflictError: If {{model_name_lower}} already exists.
+        ValidationError: If payload validation fails.
+    """
+    {{model_name_lower}} = {{model_name_lower}}_service.create_{{model_name_lower}}(
+        db,
+        current_user,
+        payload.name,
+    )
+    return {{ModelNamePascal}}Out.model_validate({{model_name_lower}})
+
+
+@router.get("", response_model=list[{{ModelNamePascal}}Out])
+def list_{{model_name_plural_lower}}(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=10, ge=1, le=100),
+) -> list[{{ModelNamePascal}}Out]:
+    """List all {{model_name_plural_lower}} for current user.
+
+    Args:
+        db: Database session.
+        current_user: Authenticated user.
+        page: Page number (default 1).
+        page_size: Items per page (default 10, max 100).
+
+    Returns:
+        List of {{model_name_lower}} schema objects.
+    """
+    items = {{model_name_lower}}_service.list_{{model_name_plural_lower}}(
+        db,
+        current_user,
+        page=page,
+        page_size=page_size,
+    )
+    return [
+        {{ModelNamePascal}}Out.model_validate(item)
+        for item in items
+    ]
+
+
+@router.get(
+    "/{{{model_name_lower}}_id}",
+    response_model={{ModelNamePascal}}Out,
+)
+def get_{{model_name_lower}}(
+    {{model_name_lower}}_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> {{ModelNamePascal}}Out:
+    """Get {{model_name_lower}} by ID.
+
+    Args:
+        {{model_name_lower}}_id: {{model_name_lower}} identifier.
+        db: Database session.
+        current_user: Authenticated user.
+
+    Returns:
+        {{model_name_lower}} schema object.
+
+    Raises:
+        NotFoundError: If {{model_name_lower}} not found.
+    """
+    {{model_name_lower}} = (
+        {{model_name_lower}}_service.get_owned_{{model_name_lower}}(
+            db,
+            current_user,
+            {{model_name_lower}}_id,
+        )
+    )
+    return {{ModelNamePascal}}Out.model_validate({{model_name_lower}})
+
+
+@router.patch(
+    "/{{{model_name_lower}}_id}",
+    response_model={{ModelNamePascal}}Out,
+)
+def update_{{model_name_lower}}(
+    {{model_name_lower}}_id: int,
+    payload: {{ModelNamePascal}}Update,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> {{ModelNamePascal}}Out:
+    """Update {{model_name_lower}} by ID.
+
+    Args:
+        {{model_name_lower}}_id: {{model_name_lower}} identifier.
+        payload: {{model_name_lower}} update request data.
+        db: Database session.
+        current_user: Authenticated user.
+
+    Returns:
+        Updated {{model_name_lower}} as schema object.
+
+    Raises:
+        NotFoundError: If {{model_name_lower}} not found.
+    """
+    {{model_name_lower}} = (
+        {{model_name_lower}}_service.update_{{model_name_lower}}(
+            db,
+            current_user,
+            {{model_name_lower}}_id,
+            name=payload.name,
+        )
+    )
+    return {{ModelNamePascal}}Out.model_validate({{model_name_lower}})
+
+
+@router.delete(
+    "/{{{model_name_lower}}_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def delete_{{model_name_lower}}(
+    {{model_name_lower}}_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> None:
+    """Delete {{model_name_lower}} by ID.
+
+    Args:
+        {{model_name_lower}}_id: {{model_name_lower}} identifier.
+        db: Database session.
+        current_user: Authenticated user.
+
+    Raises:
+        NotFoundError: If {{model_name_lower}} not found.
+    """
+    {{model_name_lower}}_service.delete_{{model_name_lower}}(
+        db,
+        current_user,
+        {{model_name_lower}}_id,
+    )

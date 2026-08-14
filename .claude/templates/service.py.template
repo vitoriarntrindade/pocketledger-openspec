@@ -1,0 +1,153 @@
+"""Template: Service Layer com Boas Práticas.
+
+Copiar este arquivo para criar novo serviço seguindo padrões de qualidade.
+"""
+
+from sqlalchemy.orm import Session
+
+from app.core.errors import NotFoundError
+from app.models.{{model_name_lower}} import {{ModelNamePascal}}
+from app.models.user import User
+
+
+def create_{{model_name_lower}}(
+    db: Session,
+    user: User,
+    name: str,
+) -> {{ModelNamePascal}}:
+    """Create a new {{model_name_lower}}.
+
+    Args:
+        db: Database session.
+        user: Owner user.
+        name: {{model_name_lower}} name.
+
+    Returns:
+        Created {{model_name_lower}} model.
+
+    Raises:
+        ConflictError: If {{model_name_lower}} already exists.
+        ValidationError: If input validation fails.
+    """
+    {{model_name_lower}} = {{ModelNamePascal}}(
+        user_id=user.id,
+        name=name,
+    )
+    db.add({{model_name_lower}})
+    db.commit()
+    db.refresh({{model_name_lower}})
+    return {{model_name_lower}}
+
+
+def list_{{model_name_plural_lower}}(
+    db: Session,
+    user: User,
+    page: int = 1,
+    page_size: int = 10,
+) -> list[{{ModelNamePascal}}]:
+    """List all {{model_name_plural_lower}} for a user.
+
+    Args:
+        db: Database session.
+        user: Owner user.
+        page: Page number (default 1).
+        page_size: Items per page (default 10).
+
+    Returns:
+        List of {{model_name_lower}} models.
+    """
+    skip = (page - 1) * page_size
+    return (
+        db.query({{ModelNamePascal}})
+        .filter({{ModelNamePascal}}.user_id == user.id)
+        .offset(skip)
+        .limit(page_size)
+        .all()
+    )
+
+
+def get_owned_{{model_name_lower}}(
+    db: Session,
+    user: User,
+    {{model_name_lower}}_id: int,
+) -> {{ModelNamePascal}}:
+    """Get {{model_name_lower}} by ID (security: verify ownership).
+
+    Args:
+        db: Database session.
+        user: Owner user.
+        {{model_name_lower}}_id: {{model_name_lower}} identifier.
+
+    Returns:
+        {{model_name_lower}} model.
+
+    Raises:
+        NotFoundError: If {{model_name_lower}} not found or not owned.
+    """
+    {{model_name_lower}} = (
+        db.query({{ModelNamePascal}})
+        .filter(
+            {{ModelNamePascal}}.id == {{model_name_lower}}_id,
+            {{ModelNamePascal}}.user_id == user.id,
+        )
+        .first()
+    )
+    if {{model_name_lower}} is None:
+        raise NotFoundError("{{ModelNamePascal}} not found.")
+    return {{model_name_lower}}
+
+
+def update_{{model_name_lower}}(
+    db: Session,
+    user: User,
+    {{model_name_lower}}_id: int,
+    name: str | None = None,
+) -> {{ModelNamePascal}}:
+    """Update {{model_name_lower}} (security: verify ownership).
+
+    Args:
+        db: Database session.
+        user: Owner user.
+        {{model_name_lower}}_id: {{model_name_lower}} identifier.
+        name: New name (optional).
+
+    Returns:
+        Updated {{model_name_lower}} model.
+
+    Raises:
+        NotFoundError: If {{model_name_lower}} not found or not owned.
+    """
+    {{model_name_lower}} = get_owned_{{model_name_lower}}(
+        db,
+        user,
+        {{model_name_lower}}_id,
+    )
+    if name is not None:
+        {{model_name_lower}}.name = name
+    db.commit()
+    db.refresh({{model_name_lower}})
+    return {{model_name_lower}}
+
+
+def delete_{{model_name_lower}}(
+    db: Session,
+    user: User,
+    {{model_name_lower}}_id: int,
+) -> None:
+    """Delete {{model_name_lower}} (security: verify ownership).
+
+    Args:
+        db: Database session.
+        user: Owner user.
+        {{model_name_lower}}_id: {{model_name_lower}} identifier.
+
+    Raises:
+        NotFoundError: If {{model_name_lower}} not found or not owned.
+    """
+    {{model_name_lower}} = get_owned_{{model_name_lower}}(
+        db,
+        user,
+        {{model_name_lower}}_id,
+    )
+    db.delete({{model_name_lower}})
+    db.commit()

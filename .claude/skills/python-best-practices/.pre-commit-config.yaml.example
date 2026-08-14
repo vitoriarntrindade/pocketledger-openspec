@@ -1,0 +1,111 @@
+# Example .pre-commit-config.yaml
+# Copy to your project root as .pre-commit-config.yaml
+# Install with: pip install pre-commit && pre-commit install
+
+repos:
+  # Ruff - Python linter and formatter (replaces flake8, black, isort, etc.)
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.1.6  # Update to latest version
+    hooks:
+      # Linting
+      - id: ruff
+        name: Ruff lint
+        args:
+          - --fix
+          - --max-line-length=78
+        stages: [commit]
+
+      # Formatting
+      - id: ruff-format
+        name: Ruff format
+        stages: [commit]
+
+  # MyPy - Python type checker
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.5.1  # Update to latest version
+    hooks:
+      - id: mypy
+        name: MyPy type check
+        language: python
+        types: [python]
+        require_serial: true
+        additional_dependencies:
+          - "types-all"
+          - "types-requests"
+          - "types-PyYAML"
+        args:
+          - --ignore-missing-imports
+          - --warn-redundant-casts
+          - --warn-unused-ignores
+        stages: [commit]
+
+  # Flake8 - Traditional linter (comprehensive checks)
+  - repo: https://github.com/PyCQA/flake8
+    rev: 6.1.0  # Update to latest version
+    hooks:
+      - id: flake8
+        name: Flake8 lint
+        args:
+          - --max-line-length=78
+          - --max-complexity=10
+        additional_dependencies:
+          - flake8-bugbear
+          - flake8-comprehensions
+          - flake8-simplify
+        stages: [commit]
+
+  # Trailing whitespace
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0  # Update to latest version
+    hooks:
+      - id: trailing-whitespace
+        name: Trim trailing whitespace
+        stages: [commit]
+
+      - id: end-of-file-fixer
+        name: Fix end of file
+        stages: [commit]
+
+      - id: check-yaml
+        name: Check YAML
+        stages: [commit]
+
+      - id: check-json
+        name: Check JSON
+        stages: [commit]
+
+      - id: check-merge-conflict
+        name: Check for merge conflicts
+        stages: [commit]
+
+      - id: detect-private-key
+        name: Detect private keys
+        stages: [commit]
+
+      - id: check-ast
+        name: Check Python AST
+        stages: [commit]
+
+  # PyDocStyle - Docstring style checker
+  - repo: https://github.com/PyCQA/pydocstyle
+    rev: 6.3.0  # Update to latest version
+    hooks:
+      - id: pydocstyle
+        name: PyDocStyle check
+        args:
+          - --convention=google
+        stages: [commit]
+
+# Configuration for all hooks
+default_language_version:
+  python: python3.8
+
+# Only run on Python files
+files: \.py$
+exclude: ^(\.venv|venv|build|dist|\.eggs)
+
+# Stages to run: commit, push, manual
+default_stages: [commit]
+
+# Fail if any hook fails
+fail_fast: false
