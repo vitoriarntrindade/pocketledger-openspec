@@ -1,0 +1,226 @@
+# 🚀 Adicionando Novas Features com Código "Limpo"
+
+**Objetivo:** Código já nasça tipado, documentado, seguindo PEP 8 - sem refatoração depois.
+
+## ⚡ Quick Start (5 minutos)
+
+### 1. Criar Feature Branch
+
+```bash
+git checkout -b feature/your-feature-name
+```
+
+### 2. Usar Template para Novo Componente
+
+```bash
+# Para novo router (endpoint)
+./claude/scripts/generate-component.sh router your_feature
+
+# Para novo serviço (lógica)
+./claude/scripts/generate-component.sh service your_feature
+```
+
+### 3. Editar e Implementar
+
+O template já vem com:
+- ✅ Type hints completos
+- ✅ Docstrings (Google style)
+- ✅ PEP 8 estrutura
+- ✅ Max 78 caracteres
+
+### 4. Commitar (Pre-commit Valida)
+
+```bash
+git add .
+git commit -m "feat: add your feature"
+# Pre-commit roda automaticamente:
+# ✓ Type checking (mypy)
+# ✓ Linting (ruff + flake8)
+# ✓ Formatting (automático)
+# ✓ Docstrings (pydocstyle)
+```
+
+### 5. Ready! ✓
+
+Código passa validação = pronto para production!
+
+---
+
+## 📋 Padrões Essenciais
+
+### ✅ SEMPRE Fazer
+
+```python
+from typing import Optional, List
+
+def get_user(user_id: int) -> Optional[User]:
+    """Get user by ID.
+    
+    Args:
+        user_id: User identifier.
+        
+    Returns:
+        User if found, None otherwise.
+    """
+    # implementation
+    pass
+```
+
+### ❌ NUNCA Fazer
+
+```python
+# Sem type hints
+def get_user(user_id):
+    return user  # Wrong!
+
+# Linha muito longa (>78 chars)
+def create_item(name: str, description: str, category_id: int) -> ItemOut:
+
+# Sem docstring
+def process_data(data):
+    pass
+```
+
+---
+
+## 🛠️ Templates Disponíveis
+
+| Template | Localização | Uso |
+|----------|-------------|-----|
+| Router | `.claude/templates/router.py.template` | API endpoints |
+| Service | `.claude/templates/service.py.template` | Business logic |
+
+**Como usar:**
+
+```bash
+cp .claude/templates/router.py.template app/api/routers/new_router.py
+
+# Editar: substituir {{ModelNamePascal}}, {{model_name_lower}}, etc
+```
+
+---
+
+## 🔍 Validação Automática
+
+### Pre-commit Hooks
+
+Cada commit roda automaticamente:
+
+1. **Ruff** - Formata + arruma problemas
+2. **MyPy** - Type checking
+3. **Flake8** - PEP 8
+4. **PyDocStyle** - Docstrings
+
+**Se algo falhar:**
+- ⏸️ Commit bloqueado
+- 🔧 Ruff já corrige (formatting)
+- 📝 Você vê os problemas
+- 🔁 Depois de corrigir: `git commit` novamente
+
+### Verificação Manual
+
+```bash
+source .venv/bin/activate
+
+# Check tudo
+make check
+
+# Ou individual
+make lint           # ruff + flake8
+make type-check     # mypy
+make test           # pytest
+```
+
+---
+
+## 📚 Recursos
+
+| Arquivo | Conteúdo |
+|---------|----------|
+| `BEST_PRACTICES.md` | Padrões + exemplos detalhados |
+| `CLEAN-CODE-WORKFLOW.md` | Workflow completo |
+| `pyproject.toml` | Config (ruff, mypy) |
+| `.pre-commit-config.yaml` | Git hooks |
+
+---
+
+## 🎯 Checklist: Nova Feature
+
+- [ ] Criar branch: `git checkout -b feature/...`
+- [ ] Usar template: `./claude/scripts/generate-component.sh ...`
+- [ ] Type hints em **tudo**
+- [ ] Docstrings (Google style)
+- [ ] Max 78 caracteres por linha
+- [ ] Commitar: `git commit`
+- [ ] Pre-commit passou? ✓
+- [ ] Ready para code review!
+
+---
+
+## 💡 Exemplos Rápidos
+
+### Type Hints
+
+```python
+# ✅ Correto
+def calculate(
+    prices: list[float],
+    tax_rate: float,
+) -> float:
+    """Calculate total with tax."""
+    return sum(prices) * (1 + tax_rate)
+```
+
+### Docstrings
+
+```python
+def create_user(
+    email: str,
+    password: str,
+) -> User:
+    """Create new user account.
+    
+    Args:
+        email: User email address.
+        password: Plain text password (will be hashed).
+        
+    Returns:
+        Created user object.
+        
+    Raises:
+        ConflictError: If email already registered.
+    """
+    # implementation
+    pass
+```
+
+### Line Length (78 chars max)
+
+```python
+# ❌ 92 characters - BAD
+def create_user(email: str, password: str, name: str, phone: str) -> User:
+
+# ✅ Broken correctly - GOOD  
+def create_user(
+    email: str,
+    password: str,
+    name: str,
+    phone: str,
+) -> User:
+```
+
+---
+
+## ✅ Resultado
+
+Seguindo este processo:
+
+- ✅ Código tipado desde o início
+- ✅ Documentado já na escrita
+- ✅ Sem refatorações depois
+- ✅ Code review é simples
+- ✅ Production-ready na primeira tentativa
+
+---
+
+**Dúvidas?** Veja `BEST_PRACTICES.md` ou `CLEAN-CODE-WORKFLOW.md`
