@@ -1,7 +1,7 @@
 import json
 import logging
 
-from opentelemetry import trace
+from opentelemetry.sdk.trace import TracerProvider
 
 from app.context import request_id_ctx_var
 from app.core.logging import (
@@ -41,7 +41,17 @@ def test_request_context_filter_attaches_request_id():
 
 
 def test_current_trace_id_matches_active_span():
-    tracer = trace.get_tracer(__name__)
+    """A recording span's id is what _current_trace_id reports.
+
+    The provider is built here rather than relying on the application's
+    global tracing setup. That setup is skipped when OTEL_ENABLED is
+    false — which is how the quality gate runs, because leaving export on
+    with no collector listening adds minutes of retry backoff. Depending
+    on it would make this assert an environment variable rather than the
+    behaviour of the code.
+    """
+    provider = TracerProvider()
+    tracer = provider.get_tracer(__name__)
     with tracer.start_as_current_span("test-span") as span:
         expected = format(span.get_span_context().trace_id, "032x")
         assert _current_trace_id() == expected

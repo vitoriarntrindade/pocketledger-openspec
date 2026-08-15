@@ -9,7 +9,12 @@ from app.models.enums import TransactionType
 def _validate_amount(value: Decimal) -> Decimal:
     if value <= 0:
         raise ValueError("amount must be greater than zero")
-    if value.as_tuple().exponent < -2:
+    # Decimal.as_tuple().exponent is an int for finite values but the string
+    # 'n', 'N' or 'F' for NaN, sNaN and Infinity, which cannot be compared to
+    # an int. Guarding on the type is what makes the comparison sound; a
+    # non-finite amount is already rejected by the check above.
+    exponent = value.as_tuple().exponent
+    if isinstance(exponent, int) and exponent < -2:
         raise ValueError("amount must not have more than 2 decimal places")
     return value
 

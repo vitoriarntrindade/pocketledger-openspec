@@ -2,7 +2,10 @@ import logging
 import time
 import uuid
 
-from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.middleware.base import (
+    BaseHTTPMiddleware,
+    RequestResponseEndpoint,
+)
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 
@@ -18,7 +21,11 @@ _rate_limiter_attempts: dict[tuple[str, str], list[float]] = {}
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     """Add security-relevant HTTP response headers to every response."""
 
-    async def dispatch(self, request: Request, call_next) -> Response:
+    async def dispatch(
+        self,
+        request: Request,
+        call_next: RequestResponseEndpoint,
+    ) -> Response:
         response = await call_next(request)
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
@@ -29,7 +36,11 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 class AuthRateLimitMiddleware(BaseHTTPMiddleware):
     """In-memory, fixed-window rate limiter for authentication endpoints."""
 
-    async def dispatch(self, request: Request, call_next) -> Response:
+    async def dispatch(
+        self,
+        request: Request,
+        call_next: RequestResponseEndpoint,
+    ) -> Response:
         path = request.url.path
         if path not in (
             "/api/v1/auth/login",
@@ -80,7 +91,11 @@ class RequestIdMiddleware(BaseHTTPMiddleware):
     and the X-Request-ID header consistent for every response, error or not.
     """
 
-    async def dispatch(self, request: Request, call_next) -> Response:
+    async def dispatch(
+        self,
+        request: Request,
+        call_next: RequestResponseEndpoint,
+    ) -> Response:
         request_id = request.headers.get(REQUEST_ID_HEADER) or str(
             uuid.uuid4()
         )

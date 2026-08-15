@@ -1,21 +1,28 @@
 import json
 import logging
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+
+from opentelemetry import trace
 
 from app.context import get_request_id
 from app.core.config import settings
 
 
 def _current_trace_id() -> str | None:
-    try:
-        from opentelemetry import trace
+    """Return the active span's trace id, or None if none is recording.
 
-        span_context = trace.get_current_span().get_span_context()
-        if span_context is not None and span_context.is_valid:
-            return format(span_context.trace_id, "032x")
-    except Exception:
-        pass
+    There is deliberately no exception guard here. This runs inside a
+    logging filter, where raising would break logging itself and where
+    catching-then-logging would recurse. The OpenTelemetry API returns an
+    invalid span rather than raising when no provider is configured, so
+    the failure mode this would guard against does not occur — and if
+    something genuinely unexpected did happen, silently returning None
+    would hide it forever.
+    """
+    span_context = trace.get_current_span().get_span_context()
+    if span_context.is_valid:
+        return format(span_context.trace_id, "032x")
     return None
 
 
@@ -34,7 +41,7 @@ class JSONFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:
         payload = {
             "timestamp": datetime.fromtimestamp(
-                record.created, tz=timezone.utc
+                record.created, tz=UTC
             ).isoformat(),
             "level": record.levelname,
             "service": settings.service_name,

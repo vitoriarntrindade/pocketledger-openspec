@@ -63,6 +63,28 @@ propagate into a log-formatting path. That is the correct outcome: a tracing
 lookup failing in a way nobody anticipated is information, and losing it is how
 observability code silently stops working.
 
+### Decision: keep the readiness probe's broad catch, and scope the rule instead
+
+Ruff flags `except Exception` in `/ready` as BLE001, the same rule that
+correctly flagged `_current_trace_id`. Narrowing it to `SQLAlchemyError` was
+tried first and immediately broke `test_ready_endpoint_when_db_unavailable`,
+which simulates an unreachable database with a `RuntimeError`.
+
+The failing test was the right signal. A readiness probe answers one question —
+can this instance serve traffic? — and any failure reaching that point means
+no. Narrowing the catch would let a driver, DNS or configuration error escape
+as a 500, which tells an orchestrator less than an orderly 503 does.
+
+The two cases look identical to the linter and are opposite in substance:
+`_current_trace_id` swallowed its exception and returned `None`, hiding the
+failure forever; `/ready` turns its exception into the response. The first is
+the defect BLE001 exists to catch, the second is the intended design.
+
+So BLE001 is scoped off for that one module, with the reasoning recorded in
+`pyproject.toml` and in the code. This is a deliberate rule decision rather
+than an inline suppression, which is what the constitution requires — and it
+keeps this change's promise that no behaviour changes.
+
 ### Decision: make the trace test self-contained
 
 `test_current_trace_id_matches_active_span` asserts that `_current_trace_id()`

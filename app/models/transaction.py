@@ -38,7 +38,7 @@ class Transaction(Base):
     )
     created_at: Mapped[dt.datetime] = mapped_column(
         DateTime(timezone=True),
-        default=lambda: dt.datetime.now(dt.timezone.utc),
+        default=lambda: dt.datetime.now(dt.UTC),
         nullable=False,
     )
 
