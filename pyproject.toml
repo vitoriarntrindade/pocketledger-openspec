@@ -45,7 +45,14 @@ include = ["app*"]
 [tool.ruff]
 line-length = 78
 target-version = "py312"
-extend-exclude = [".venv", "alembic/versions"]
+extend-exclude = [
+    ".venv",
+    "alembic/versions",
+    # Skill reference material is documentation that happens to be Python.
+    # Linting teaching examples against production rules produces noise and
+    # would force edits to a document to satisfy a code checker.
+    ".claude/skills/**/references",
+]
 
 [tool.ruff.lint]
 select = [

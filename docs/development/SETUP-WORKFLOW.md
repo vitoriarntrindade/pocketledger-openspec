@@ -1,5 +1,22 @@
 # Setup: Inicializar Repositório com Workflow Padronizado
 
+> [!IMPORTANT]
+> **Superseded — read [`docs/agentic-development.md`](../agentic-development.md) first.**
+>
+> This document was written against a pipeline that was never installed. It
+> refers to commands and layouts that do not work as described:
+>
+> - `make check` had no `Makefile` behind it; the gate is now `make quality`.
+> - ruff, mypy, flake8 and pre-commit were documented but not installed.
+> - `.claude/claude.md` was lowercase and so was likely never loaded; the
+>   project constitution is now `CLAUDE.md` in the repository root.
+> - `openspec/changes/active/` is not a layout OpenSpec 1.8 recognises; changes
+>   live directly under `openspec/changes/<name>/`.
+> - flake8 and pydocstyle have been retired; ruff is the single authority.
+>
+> It is kept for its background and reasoning, which remain useful. Where it
+> disagrees with `CLAUDE.md` or `docs/agentic-development.md`, those win.
+
 Este documento explica como configurar o PocketLedger com o novo workflow de desenvolvimento padronizado.
 
 ## Status Atual
