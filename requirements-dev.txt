@@ -1,3 +1,18 @@
 -r requirements.txt
+
+# Testing
 pytest==8.3.4
+pytest-cov==7.1.0
 httpx==0.28.1
+
+# Quality gates. Ruff is the single lint + format authority for this project;
+# there is deliberately no flake8, black, isort or pydocstyle here.
+ruff==0.16.3
+mypy==2.3.1
+
+# Security
+bandit[toml]==1.9.4
+pip-audit==2.10.1
+
+# Repository protection layer (holds even when Claude is not involved)
+pre-commit==4.6.2

@@ -589,7 +589,6 @@ A suíte tem 66 testes, organizados por capacidade (mesma divisão usada nas esp
 ---
 
 ## 📁 Estrutura do projeto
-## 📁 Estrutura do projeto
 
 ```text
 .
