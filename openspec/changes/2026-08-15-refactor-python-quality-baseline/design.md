@@ -119,7 +119,18 @@ this is precisely why the formatting commit is isolated: if something did
 break, the commit that caused it is unambiguous.
 
 **`git blame` noise.** Discussed above; mitigated by keeping the formatting
-commit pure and recording its hash here for `--ignore-rev`.
+commit pure and recording its hash here for `--ignore-rev`:
+
+```bash
+git blame --ignore-rev 30b1b45 <file>
+```
+
+To apply it permanently for everyone:
+
+```bash
+echo 30b1b45 >> .git-blame-ignore-revs
+git config blame.ignoreRevsFile .git-blame-ignore-revs
+```
 
 **The coverage floor has almost no margin.** Measured at 96% against a floor of
 95%. This change adds no code, so it should not move, but any future change
