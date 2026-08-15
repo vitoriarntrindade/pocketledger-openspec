@@ -40,9 +40,7 @@ class AuthRateLimitMiddleware(BaseHTTPMiddleware):
         from app.api.error_handlers import _envelope
         from app.core.config import settings
 
-        client_ip = (
-            request.client.host if request.client else "unknown"
-        )
+        client_ip = request.client.host if request.client else "unknown"
         key = (client_ip, path)
         now = time.time()
         window = settings.rate_limit_window_seconds
@@ -51,9 +49,7 @@ class AuthRateLimitMiddleware(BaseHTTPMiddleware):
             _rate_limiter_attempts[key] = []
 
         _rate_limiter_attempts[key] = [
-            t
-            for t in _rate_limiter_attempts[key]
-            if now - t < window
+            t for t in _rate_limiter_attempts[key] if now - t < window
         ]
 
         if (
@@ -85,9 +81,8 @@ class RequestIdMiddleware(BaseHTTPMiddleware):
     """
 
     async def dispatch(self, request: Request, call_next) -> Response:
-        request_id = (
-            request.headers.get(REQUEST_ID_HEADER)
-            or str(uuid.uuid4())
+        request_id = request.headers.get(REQUEST_ID_HEADER) or str(
+            uuid.uuid4()
         )
         token = request_id_ctx_var.set(request_id)
         start = time.monotonic()

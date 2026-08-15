@@ -6,7 +6,9 @@ from app.core.config import settings
 class RegisterRequest(BaseModel):
     name: str = Field(min_length=1, max_length=255)
     email: EmailStr
-    password: str = Field(min_length=settings.password_min_length, max_length=255)
+    password: str = Field(
+        min_length=settings.password_min_length, max_length=255
+    )
 
     @field_validator("password")
     @classmethod

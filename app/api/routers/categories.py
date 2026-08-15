@@ -35,9 +35,7 @@ def list_categories(
     current_user: User = Depends(get_current_user),
 ) -> list[CategoryOut]:
     categories = category_service.list_categories(db, current_user)
-    return [
-        CategoryOut.model_validate(category) for category in categories
-    ]
+    return [CategoryOut.model_validate(category) for category in categories]
 
 
 @router.patch("/{category_id}", response_model=CategoryOut)

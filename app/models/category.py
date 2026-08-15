@@ -15,18 +15,29 @@ if TYPE_CHECKING:
 class Category(Base):
     __tablename__ = "categories"
     __table_args__ = (
-        UniqueConstraint("user_id", "name", "type", name="uq_category_user_name_type"),
+        UniqueConstraint(
+            "user_id", "name", "type", name="uq_category_user_name_type"
+        ),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False, index=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id"), nullable=False, index=True
+    )
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     type: Mapped[TransactionType] = mapped_column(
-        Enum(TransactionType, name="transaction_type", create_constraint=True), nullable=False
+        Enum(
+            TransactionType, name="transaction_type", create_constraint=True
+        ),
+        nullable=False,
     )
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False,
     )
 
     owner: Mapped["User"] = relationship(back_populates="categories")
-    transactions: Mapped[list["Transaction"]] = relationship(back_populates="category")
+    transactions: Mapped[list["Transaction"]] = relationship(
+        back_populates="category"
+    )

@@ -10,14 +10,18 @@ def test_not_found_maps_to_404(client, auth_headers):
 def test_conflict_maps_to_409(client, auth_headers):
     payload = {"name": "Alimentacao", "type": "expense"}
     client.post("/api/v1/categories", json=payload, headers=auth_headers)
-    response = client.post("/api/v1/categories", json=payload, headers=auth_headers)
+    response = client.post(
+        "/api/v1/categories", json=payload, headers=auth_headers
+    )
     assert response.status_code == 409
     assert response.json()["error"]["code"] == "conflict"
 
 
 def test_domain_validation_error_maps_to_400(client, auth_headers):
     expense = client.post(
-        "/api/v1/categories", json={"name": "Alimentacao", "type": "expense"}, headers=auth_headers
+        "/api/v1/categories",
+        json={"name": "Alimentacao", "type": "expense"},
+        headers=auth_headers,
     ).json()
     response = client.post(
         "/api/v1/transactions",
@@ -34,10 +38,16 @@ def test_domain_validation_error_maps_to_400(client, auth_headers):
     assert response.json()["error"]["code"] == "validation_error"
 
 
-def test_request_validation_error_returns_safe_consistent_envelope(client, auth_headers):
+def test_request_validation_error_returns_safe_consistent_envelope(
+    client, auth_headers
+):
     response = client.post(
         "/api/v1/auth/register",
-        json={"name": "Alice", "email": "not-an-email", "password": "supersecret123"},
+        json={
+            "name": "Alice",
+            "email": "not-an-email",
+            "password": "supersecret123",
+        },
     )
     assert response.status_code == 422
     body = response.json()

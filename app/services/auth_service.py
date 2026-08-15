@@ -14,7 +14,9 @@ def register_user(db: Session, name: str, email: str, password: str) -> User:
     if existing is not None:
         raise ConflictError("An account with this email already exists.")
 
-    user = User(name=name, email=email, hashed_password=hash_password(password))
+    user = User(
+        name=name, email=email, hashed_password=hash_password(password)
+    )
     db.add(user)
     db.commit()
     db.refresh(user)

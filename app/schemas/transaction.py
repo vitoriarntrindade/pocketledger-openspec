@@ -29,7 +29,9 @@ class TransactionCreate(BaseModel):
 
 class TransactionUpdate(BaseModel):
     type: TransactionType | None = None
-    description: str | None = Field(default=None, min_length=1, max_length=1000)
+    description: str | None = Field(
+        default=None, min_length=1, max_length=1000
+    )
     amount: Decimal | None = None
     transaction_date: date | None = None
     category_id: int | None = None

@@ -23,9 +23,13 @@ def test_completed_request_reflected_in_http_metrics(client):
     assert "request_id" not in metrics_text
 
 
-def test_transaction_created_increments_business_counter(client, auth_headers):
+def test_transaction_created_increments_business_counter(
+    client, auth_headers
+):
     category = client.post(
-        "/api/v1/categories", json={"name": "Alimentacao", "type": "expense"}, headers=auth_headers
+        "/api/v1/categories",
+        json={"name": "Alimentacao", "type": "expense"},
+        headers=auth_headers,
     ).json()
     before = transactions_created_total._value.get()
 

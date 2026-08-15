@@ -70,12 +70,13 @@ make quality
 ```python
 from typing import Optional, List
 
+
 def get_user(user_id: int) -> Optional[User]:
     """Get user by ID.
-    
+
     Args:
         user_id: User identifier.
-        
+
     Returns:
         User if found, None otherwise.
     """

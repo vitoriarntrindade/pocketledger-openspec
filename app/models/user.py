@@ -16,11 +16,19 @@ class User(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
-    email: Mapped[str] = mapped_column(String(255), nullable=False, unique=True, index=True)
+    email: Mapped[str] = mapped_column(
+        String(255), nullable=False, unique=True, index=True
+    )
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False,
     )
 
-    categories: Mapped[list["Category"]] = relationship(back_populates="owner")
-    transactions: Mapped[list["Transaction"]] = relationship(back_populates="owner")
+    categories: Mapped[list["Category"]] = relationship(
+        back_populates="owner"
+    )
+    transactions: Mapped[list["Transaction"]] = relationship(
+        back_populates="owner"
+    )
