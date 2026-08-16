@@ -11,6 +11,11 @@ Bem-vindo! Este é o centro de documentação do PocketLedger.
    funciona aqui: gates, agentes, hooks e o ciclo de vida de uma mudança
 3. **[standards/BEST_PRACTICES.md](standards/BEST_PRACTICES.md)** — padrões de código
 
+**Quer entender o produto, não o processo?** A documentação do sistema em si —
+visão geral, primeiros passos, modelo de dados, fluxos, API, testes, estrutura
+e evoluções — está em **[`project/`](project/overview.md)**, indexada no
+[README da raiz](../README.md#-documentação).
+
 As regras permanentes do projeto ficam nas constituições na raiz:
 **[`AGENTS.md`](../AGENTS.md)** para Codex e
 **[`CLAUDE.md`](../CLAUDE.md)** para Claude Code. Quando qualquer documento
@@ -23,6 +28,16 @@ docs/
 ├── README.md                    ← você está aqui
 ├── START-HERE.md                # visão geral do projeto
 ├── agentic-development.md       # arquitetura de desenvolvimento autônomo
+│
+├── project/                     # documentação do produto, extraída do README
+│   ├── overview.md              # problema resolvido e como o sistema funciona
+│   ├── getting-started.md       # quick start e variáveis de ambiente
+│   ├── data-model.md            # tabelas, relacionamentos e dicionário
+│   ├── flows.md                 # fluxos ponta a ponta com diagramas
+│   ├── api.md                   # endpoints, erros e Swagger
+│   ├── testing.md               # execução da suíte e cobertura por arquivo
+│   ├── project-structure.md     # árvore de diretórios e stack
+│   └── roadmap.md               # limites de escopo e evoluções
 │
 ├── standards/
 │   └── BEST_PRACTICES.md        # Python: PEP 8, type hints, docstrings
