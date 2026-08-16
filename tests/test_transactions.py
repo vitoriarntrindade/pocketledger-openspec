@@ -4,14 +4,18 @@ import pytest
 @pytest.fixture
 def expense_category(client, auth_headers):
     return client.post(
-        "/api/v1/categories", json={"name": "Alimentacao", "type": "expense"}, headers=auth_headers
+        "/api/v1/categories",
+        json={"name": "Alimentacao", "type": "expense"},
+        headers=auth_headers,
     ).json()
 
 
 @pytest.fixture
 def income_category(client, auth_headers):
     return client.post(
-        "/api/v1/categories", json={"name": "Salario", "type": "income"}, headers=auth_headers
+        "/api/v1/categories",
+        json={"name": "Salario", "type": "income"},
+        headers=auth_headers,
     ).json()
 
 
@@ -35,12 +39,16 @@ def test_create_transaction_success(client, auth_headers, expense_category):
     assert body["category_id"] == expense_category["id"]
 
 
-def test_create_type_mismatch_rejected(client, auth_headers, expense_category):
+def test_create_type_mismatch_rejected(
+    client, auth_headers, expense_category
+):
     response = _create(client, auth_headers, expense_category, type="income")
     assert response.status_code == 400
 
 
-def test_create_foreign_category_rejected(client, auth_headers, other_auth_headers, expense_category):
+def test_create_foreign_category_rejected(
+    client, auth_headers, other_auth_headers, expense_category
+):
     response = _create(client, other_auth_headers, expense_category)
     assert response.status_code == 404
 
@@ -67,17 +75,25 @@ def test_missing_type_rejected(client, auth_headers, expense_category):
         "transaction_date": "2026-01-15",
         "category_id": expense_category["id"],
     }
-    response = client.post("/api/v1/transactions", json=payload, headers=auth_headers)
+    response = client.post(
+        "/api/v1/transactions", json=payload, headers=auth_headers
+    )
     assert response.status_code == 422
 
 
-def test_more_than_two_decimal_places_rejected(client, auth_headers, expense_category):
+def test_more_than_two_decimal_places_rejected(
+    client, auth_headers, expense_category
+):
     response = _create(client, auth_headers, expense_category, amount="5.123")
     assert response.status_code == 422
 
 
-def test_backdated_transaction_accepted(client, auth_headers, expense_category):
-    response = _create(client, auth_headers, expense_category, transaction_date="2020-01-01")
+def test_backdated_transaction_accepted(
+    client, auth_headers, expense_category
+):
+    response = _create(
+        client, auth_headers, expense_category, transaction_date="2020-01-01"
+    )
     assert response.status_code == 201
     assert response.json()["transaction_date"] == "2020-01-01"
 
@@ -95,7 +111,9 @@ def test_edit_success(client, auth_headers, expense_category):
     assert body["amount"] == "30.00"
 
 
-def test_edit_causing_type_mismatch_rejected(client, auth_headers, expense_category, income_category):
+def test_edit_causing_type_mismatch_rejected(
+    client, auth_headers, expense_category, income_category
+):
     created = _create(client, auth_headers, expense_category).json()
     response = client.patch(
         f"/api/v1/transactions/{created['id']}",
@@ -104,23 +122,37 @@ def test_edit_causing_type_mismatch_rejected(client, auth_headers, expense_categ
     )
     assert response.status_code == 400
 
-    unchanged = client.get(f"/api/v1/transactions/{created['id']}", headers=auth_headers).json()
+    unchanged = client.get(
+        f"/api/v1/transactions/{created['id']}", headers=auth_headers
+    ).json()
     assert unchanged["category_id"] == expense_category["id"]
     assert unchanged["description"] == created["description"]
 
 
 def test_deletion(client, auth_headers, expense_category):
     created = _create(client, auth_headers, expense_category).json()
-    response = client.delete(f"/api/v1/transactions/{created['id']}", headers=auth_headers)
+    response = client.delete(
+        f"/api/v1/transactions/{created['id']}", headers=auth_headers
+    )
     assert response.status_code == 204
-    assert client.get(f"/api/v1/transactions/{created['id']}", headers=auth_headers).status_code == 404
+    assert (
+        client.get(
+            f"/api/v1/transactions/{created['id']}", headers=auth_headers
+        ).status_code
+        == 404
+    )
 
 
-def test_cross_user_isolation(client, auth_headers, other_auth_headers, expense_category):
+def test_cross_user_isolation(
+    client, auth_headers, other_auth_headers, expense_category
+):
     created = _create(client, auth_headers, expense_category).json()
 
     assert (
-        client.get(f"/api/v1/transactions/{created['id']}", headers=other_auth_headers).status_code
+        client.get(
+            f"/api/v1/transactions/{created['id']}",
+            headers=other_auth_headers,
+        ).status_code
         == 404
     )
     assert (
@@ -133,15 +165,30 @@ def test_cross_user_isolation(client, auth_headers, other_auth_headers, expense_
     )
     assert (
         client.delete(
-            f"/api/v1/transactions/{created['id']}", headers=other_auth_headers
+            f"/api/v1/transactions/{created['id']}",
+            headers=other_auth_headers,
         ).status_code
         == 404
     )
 
 
-def test_combined_filters(client, auth_headers, expense_category, income_category):
-    _create(client, auth_headers, expense_category, transaction_date="2026-01-05", amount="10.00")
-    _create(client, auth_headers, expense_category, transaction_date="2026-02-05", amount="20.00")
+def test_combined_filters(
+    client, auth_headers, expense_category, income_category
+):
+    _create(
+        client,
+        auth_headers,
+        expense_category,
+        transaction_date="2026-01-05",
+        amount="10.00",
+    )
+    _create(
+        client,
+        auth_headers,
+        expense_category,
+        transaction_date="2026-02-05",
+        amount="20.00",
+    )
     _create(
         client,
         auth_headers,
@@ -167,9 +214,27 @@ def test_combined_filters(client, auth_headers, expense_category, income_categor
 
 
 def test_sort_by_amount_descending(client, auth_headers, expense_category):
-    _create(client, auth_headers, expense_category, amount="5.00", description="small")
-    _create(client, auth_headers, expense_category, amount="99.00", description="big")
-    _create(client, auth_headers, expense_category, amount="42.00", description="medium")
+    _create(
+        client,
+        auth_headers,
+        expense_category,
+        amount="5.00",
+        description="small",
+    )
+    _create(
+        client,
+        auth_headers,
+        expense_category,
+        amount="99.00",
+        description="big",
+    )
+    _create(
+        client,
+        auth_headers,
+        expense_category,
+        amount="42.00",
+        description="medium",
+    )
 
     response = client.get(
         "/api/v1/transactions",
@@ -199,7 +264,12 @@ def test_pagination_second_page(client, auth_headers, expense_category):
     response = client.get(
         "/api/v1/transactions",
         headers=auth_headers,
-        params={"page": 2, "page_size": 2, "sort_by": "amount", "order": "asc"},
+        params={
+            "page": 2,
+            "page_size": 2,
+            "sort_by": "amount",
+            "order": "asc",
+        },
     )
     body = response.json()
     assert body["total"] == 5

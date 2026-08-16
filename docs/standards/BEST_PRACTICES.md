@@ -42,22 +42,23 @@ Toda função e classe deve ter type hints.
 ```python
 from typing import Optional, List
 
+
 def process_transactions(
     transactions: List[dict],
     user_id: int,
 ) -> Optional[str]:
     """Process user transactions.
-    
+
     Args:
         transactions: List of transaction dicts.
         user_id: User identifier.
-        
+
     Returns:
         Result message or None if empty.
     """
     if not transactions:
         return None
-    
+
     return f"Processed {len(transactions)} transactions"
 ```
 
@@ -112,13 +113,15 @@ def authenticate(
 MAX_RETRIES = 3
 DEFAULT_TIMEOUT = 30
 
+
 # Classes
 class UserRepository:
     def get_user(self, user_id: int) -> Optional[User]:
         pass
-    
+
     def _validate_id(self, user_id: int) -> bool:
         pass
+
 
 # Functions
 def fetch_active_users() -> List[User]:

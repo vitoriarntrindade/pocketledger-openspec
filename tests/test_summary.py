@@ -4,10 +4,14 @@ import pytest
 @pytest.fixture
 def categories(client, auth_headers):
     expense = client.post(
-        "/api/v1/categories", json={"name": "Alimentacao", "type": "expense"}, headers=auth_headers
+        "/api/v1/categories",
+        json={"name": "Alimentacao", "type": "expense"},
+        headers=auth_headers,
     ).json()
     income = client.post(
-        "/api/v1/categories", json={"name": "Salario", "type": "income"}, headers=auth_headers
+        "/api/v1/categories",
+        json={"name": "Salario", "type": "income"},
+        headers=auth_headers,
     ).json()
     return {"expense": expense, "income": income}
 
@@ -53,20 +57,37 @@ def test_summary_with_mixed_data(client, auth_headers, categories):
 
 def test_balance_reflects_immediate_change(client, auth_headers, categories):
     params = {"start_date": "2026-01-01", "end_date": "2026-01-31"}
-    before = client.get("/api/v1/summary", headers=auth_headers, params=params).json()
+    before = client.get(
+        "/api/v1/summary", headers=auth_headers, params=params
+    ).json()
     assert before["balance"] == "0"
 
-    created = _create(client, auth_headers, categories["expense"], "expense", "25.00").json()
-    after_create = client.get("/api/v1/summary", headers=auth_headers, params=params).json()
+    created = _create(
+        client, auth_headers, categories["expense"], "expense", "25.00"
+    ).json()
+    after_create = client.get(
+        "/api/v1/summary", headers=auth_headers, params=params
+    ).json()
     assert after_create["balance"] == "-25.00"
 
-    client.delete(f"/api/v1/transactions/{created['id']}", headers=auth_headers)
-    after_delete = client.get("/api/v1/summary", headers=auth_headers, params=params).json()
+    client.delete(
+        f"/api/v1/transactions/{created['id']}", headers=auth_headers
+    )
+    after_delete = client.get(
+        "/api/v1/summary", headers=auth_headers, params=params
+    ).json()
     assert after_delete["balance"] == "0"
 
 
 def test_empty_period_returns_zeros(client, auth_headers, categories):
-    _create(client, auth_headers, categories["expense"], "expense", "25.00", date_="2026-01-15")
+    _create(
+        client,
+        auth_headers,
+        categories["expense"],
+        "expense",
+        "25.00",
+        date_="2026-01-15",
+    )
 
     response = client.get(
         "/api/v1/summary",
@@ -82,7 +103,9 @@ def test_empty_period_returns_zeros(client, auth_headers, categories):
     assert body["expenses_by_category"] == []
 
 
-def test_other_users_transactions_excluded(client, auth_headers, other_auth_headers, categories):
+def test_other_users_transactions_excluded(
+    client, auth_headers, other_auth_headers, categories
+):
     other_category = client.post(
         "/api/v1/categories",
         json={"name": "Transporte", "type": "expense"},

@@ -12,7 +12,9 @@ from app.models.user import User
 from app.schemas.summary import CategoryExpense, SummaryResponse
 
 
-def get_summary(db: Session, user: User, start_date: date, end_date: date) -> SummaryResponse:
+def get_summary(
+    db: Session, user: User, start_date: date, end_date: date
+) -> SummaryResponse:
     base_query = db.query(Transaction).filter(
         Transaction.user_id == user.id,
         Transaction.transaction_date >= start_date,
@@ -29,13 +31,19 @@ def get_summary(db: Session, user: User, start_date: date, end_date: date) -> Su
         .with_entities(func.coalesce(func.sum(Transaction.amount), 0))
         .scalar()
     )
-    income_count = base_query.filter(Transaction.type == TransactionType.income).count()
-    expense_count = base_query.filter(Transaction.type == TransactionType.expense).count()
+    income_count = base_query.filter(
+        Transaction.type == TransactionType.income
+    ).count()
+    expense_count = base_query.filter(
+        Transaction.type == TransactionType.expense
+    ).count()
 
     category_rows = (
         base_query.filter(Transaction.type == TransactionType.expense)
         .join(Category, Category.id == Transaction.category_id)
-        .with_entities(Category.id, Category.name, func.sum(Transaction.amount))
+        .with_entities(
+            Category.id, Category.name, func.sum(Transaction.amount)
+        )
         .group_by(Category.id, Category.name)
         .order_by(func.sum(Transaction.amount).desc())
         .all()
@@ -55,7 +63,9 @@ def get_summary(db: Session, user: User, start_date: date, end_date: date) -> Su
         income_count=income_count,
         expense_count=expense_count,
         expenses_by_category=[
-            CategoryExpense(category_id=cid, category_name=name, total=Decimal(total))
+            CategoryExpense(
+                category_id=cid, category_name=name, total=Decimal(total)
+            )
             for cid, name, total in category_rows
         ],
     )

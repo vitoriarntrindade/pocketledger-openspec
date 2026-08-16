@@ -72,19 +72,15 @@ def get_user_by_email(
     email: str,
 ) -> Optional[User]:
     """Get user by email address.
-    
+
     Args:
         db: Database session.
         email: User email to search.
-        
+
     Returns:
         User if found, None otherwise.
     """
-    return (
-        db.query(User)
-        .filter(User.email == email)
-        .first()
-    )
+    return db.query(User).filter(User.email == email).first()
 ```
 
 ### Passo 3: Antes de Commitar - Rodar o Gate Localmente
@@ -230,6 +226,7 @@ make test         # pytest, sobe o PostgreSQL antes
 def process(data: dict) -> str:
     """Process data and return string."""
     return str(data)
+
 
 # ❌ NEVER
 def process(data):

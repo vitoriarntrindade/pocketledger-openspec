@@ -14,13 +14,17 @@ def test_assert_production_ready_allows_test():
 
 
 def test_assert_production_ready_rejects_placeholder_jwt_secret_in_production():
-    config = Settings(environment="production", jwt_secret="change-me-in-production")
+    config = Settings(
+        environment="production", jwt_secret="change-me-in-production"
+    )
     with pytest.raises(RuntimeError, match="JWT_SECRET"):
         assert_production_ready(config)
 
 
 def test_assert_production_ready_rejects_dev_only_jwt_secret_in_production():
-    config = Settings(environment="production", jwt_secret="dev-only-secret-change-me")
+    config = Settings(
+        environment="production", jwt_secret="dev-only-secret-change-me"
+    )
     with pytest.raises(RuntimeError, match="JWT_SECRET"):
         assert_production_ready(config)
 

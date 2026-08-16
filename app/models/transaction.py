@@ -17,18 +17,29 @@ class Transaction(Base):
     __tablename__ = "transactions"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False, index=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id"), nullable=False, index=True
+    )
     category_id: Mapped[int] = mapped_column(
-        ForeignKey("categories.id", ondelete="RESTRICT"), nullable=False, index=True
+        ForeignKey("categories.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
     )
     type: Mapped[TransactionType] = mapped_column(
-        Enum(TransactionType, name="transaction_type", create_constraint=True), nullable=False
+        Enum(
+            TransactionType, name="transaction_type", create_constraint=True
+        ),
+        nullable=False,
     )
     description: Mapped[str] = mapped_column(Text, nullable=False)
     amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
-    transaction_date: Mapped[dt.date] = mapped_column(Date, nullable=False, index=True)
+    transaction_date: Mapped[dt.date] = mapped_column(
+        Date, nullable=False, index=True
+    )
     created_at: Mapped[dt.datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: dt.datetime.now(dt.timezone.utc), nullable=False
+        DateTime(timezone=True),
+        default=lambda: dt.datetime.now(dt.UTC),
+        nullable=False,
     )
 
     owner: Mapped["User"] = relationship(back_populates="transactions")

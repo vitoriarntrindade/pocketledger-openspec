@@ -2,7 +2,10 @@ import logging
 import time
 import uuid
 
-from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.middleware.base import (
+    BaseHTTPMiddleware,
+    RequestResponseEndpoint,
+)
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 
@@ -18,7 +21,11 @@ _rate_limiter_attempts: dict[tuple[str, str], list[float]] = {}
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     """Add security-relevant HTTP response headers to every response."""
 
-    async def dispatch(self, request: Request, call_next) -> Response:
+    async def dispatch(
+        self,
+        request: Request,
+        call_next: RequestResponseEndpoint,
+    ) -> Response:
         response = await call_next(request)
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
@@ -29,7 +36,11 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 class AuthRateLimitMiddleware(BaseHTTPMiddleware):
     """In-memory, fixed-window rate limiter for authentication endpoints."""
 
-    async def dispatch(self, request: Request, call_next) -> Response:
+    async def dispatch(
+        self,
+        request: Request,
+        call_next: RequestResponseEndpoint,
+    ) -> Response:
         path = request.url.path
         if path not in (
             "/api/v1/auth/login",
@@ -40,9 +51,7 @@ class AuthRateLimitMiddleware(BaseHTTPMiddleware):
         from app.api.error_handlers import _envelope
         from app.core.config import settings
 
-        client_ip = (
-            request.client.host if request.client else "unknown"
-        )
+        client_ip = request.client.host if request.client else "unknown"
         key = (client_ip, path)
         now = time.time()
         window = settings.rate_limit_window_seconds
@@ -51,9 +60,7 @@ class AuthRateLimitMiddleware(BaseHTTPMiddleware):
             _rate_limiter_attempts[key] = []
 
         _rate_limiter_attempts[key] = [
-            t
-            for t in _rate_limiter_attempts[key]
-            if now - t < window
+            t for t in _rate_limiter_attempts[key] if now - t < window
         ]
 
         if (
@@ -84,10 +91,13 @@ class RequestIdMiddleware(BaseHTTPMiddleware):
     and the X-Request-ID header consistent for every response, error or not.
     """
 
-    async def dispatch(self, request: Request, call_next) -> Response:
-        request_id = (
-            request.headers.get(REQUEST_ID_HEADER)
-            or str(uuid.uuid4())
+    async def dispatch(
+        self,
+        request: Request,
+        call_next: RequestResponseEndpoint,
+    ) -> Response:
+        request_id = request.headers.get(REQUEST_ID_HEADER) or str(
+            uuid.uuid4()
         )
         token = request_id_ctx_var.set(request_id)
         start = time.monotonic()

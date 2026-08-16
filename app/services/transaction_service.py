@@ -18,9 +18,13 @@ SORT_COLUMNS = {
 }
 
 
-def _check_category_type_match(category: Category, type_: TransactionType) -> None:
+def _check_category_type_match(
+    category: Category, type_: TransactionType
+) -> None:
     if category.type != type_:
-        raise ValidationError("Transaction type must match the category's type.")
+        raise ValidationError(
+            "Transaction type must match the category's type."
+        )
 
 
 def create_transaction(
@@ -50,10 +54,14 @@ def create_transaction(
     return transaction
 
 
-def get_owned_transaction(db: Session, user: User, transaction_id: int) -> Transaction:
+def get_owned_transaction(
+    db: Session, user: User, transaction_id: int
+) -> Transaction:
     transaction = (
         db.query(Transaction)
-        .filter(Transaction.id == transaction_id, Transaction.user_id == user.id)
+        .filter(
+            Transaction.id == transaction_id, Transaction.user_id == user.id
+        )
         .first()
     )
     if transaction is None:
@@ -75,7 +83,9 @@ def update_transaction(
     transaction = get_owned_transaction(db, user, transaction_id)
 
     new_type = type_ if type_ is not None else transaction.type
-    new_category_id = category_id if category_id is not None else transaction.category_id
+    new_category_id = (
+        category_id if category_id is not None else transaction.category_id
+    )
     category = get_owned_category(db, user, new_category_id)
     _check_category_type_match(category, new_type)
 

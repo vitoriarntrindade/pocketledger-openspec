@@ -67,6 +67,7 @@ The point of a docstring is to say what the signature cannot.
 def get_user(user_id: int) -> User:
     """Get the user."""
 
+
 # Useful: states the failure mode and the constraint.
 def get_owned_transaction(
     db: Session, user: User, transaction_id: int

@@ -14,7 +14,9 @@ TEST_DATABASE_URL = os.environ.get(
 )
 
 engine = create_engine(TEST_DATABASE_URL)
-TestSessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
+TestSessionLocal = sessionmaker(
+    bind=engine, autoflush=False, autocommit=False
+)
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -29,15 +31,18 @@ def _clean_tables():
     yield
     with engine.begin() as conn:
         conn.execute(
-            text("TRUNCATE TABLE transactions, categories, users RESTART IDENTITY CASCADE")
+            text(
+                "TRUNCATE TABLE transactions, categories, users RESTART IDENTITY CASCADE"
+            )
         )
 
 
 @pytest.fixture(autouse=True)
 def _reset_rate_limiter():
     from app.api import middleware as middleware_module
+
     yield
-    if hasattr(middleware_module, '_rate_limiter_attempts'):
+    if hasattr(middleware_module, "_rate_limiter_attempts"):
         middleware_module._rate_limiter_attempts.clear()
 
 
@@ -57,11 +62,16 @@ def client():
     app.dependency_overrides.clear()
 
 
-def register_and_login(client, name="Alice", email="alice@example.com", password="supersecret123"):
+def register_and_login(
+    client, name="Alice", email="alice@example.com", password="supersecret123"
+):
     client.post(
-        "/api/v1/auth/register", json={"name": name, "email": email, "password": password}
+        "/api/v1/auth/register",
+        json={"name": name, "email": email, "password": password},
     )
-    response = client.post("/api/v1/auth/login", json={"email": email, "password": password})
+    response = client.post(
+        "/api/v1/auth/login", json={"email": email, "password": password}
+    )
     token = response.json()["access_token"]
     return {"Authorization": f"Bearer {token}"}
 

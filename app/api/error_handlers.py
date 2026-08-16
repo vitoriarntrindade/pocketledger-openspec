@@ -45,9 +45,7 @@ def register_exception_handlers(app: FastAPI) -> None:
         )
         # Expected, business-rule-level failures - never logged as error.
         if isinstance(exc, UnauthorizedError):
-            client_ip = (
-                request.client.host if request.client else None
-            )
+            client_ip = request.client.host if request.client else None
             logger.info(
                 "auth_failed",
                 extra={"client_ip": client_ip, "path": request.url.path},

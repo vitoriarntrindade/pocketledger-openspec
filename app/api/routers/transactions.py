@@ -71,9 +71,7 @@ def list_transactions(
         page=page,
         page_size=page_size,
     )
-    validated_items = [
-        TransactionOut.model_validate(item) for item in items
-    ]
+    validated_items = [TransactionOut.model_validate(item) for item in items]
     return TransactionListResponse(
         items=validated_items,
         total=total,

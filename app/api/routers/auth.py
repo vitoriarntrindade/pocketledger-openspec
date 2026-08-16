@@ -18,7 +18,9 @@ def register(
     payload: RegisterRequest,
     db: Session = Depends(get_db),
 ) -> UserOut:
-    user = auth_service.register_user(db, payload.name, payload.email, payload.password)
+    user = auth_service.register_user(
+        db, payload.name, payload.email, payload.password
+    )
     return UserOut.model_validate(user)
 
 
@@ -27,5 +29,7 @@ def login(
     payload: LoginRequest,
     db: Session = Depends(get_db),
 ) -> TokenResponse:
-    token = auth_service.authenticate_user(db, payload.email, payload.password)
+    token = auth_service.authenticate_user(
+        db, payload.email, payload.password
+    )
     return TokenResponse(access_token=token)

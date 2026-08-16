@@ -45,6 +45,7 @@ def register(payload: RegisterRequest) -> UserOut:
 ```python
 # ✅ CORRETO
 from app.schemas.user import UserOut
+
 return UserOut.model_validate(user)
 ```
 
@@ -72,7 +73,8 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from app.models.transaction import Transaction
-    
+
+
 class User:
     transactions: Mapped[list["Transaction"]] = relationship(...)
 ```

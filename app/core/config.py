@@ -8,7 +8,9 @@ class Settings(BaseSettings):
     environment: str = "development"
     log_level: str = "INFO"
 
-    database_url: str = "postgresql+psycopg://pocketledger:pocketledger@db:5432/pocketledger"
+    database_url: str = (
+        "postgresql+psycopg://pocketledger:pocketledger@db:5432/pocketledger"
+    )
 
     jwt_secret: str = "change-me-in-production"
     jwt_algorithm: str = "HS256"
@@ -33,7 +35,10 @@ def assert_production_ready(settings: Settings) -> None:
     if settings.environment in ("development", "test"):
         return
 
-    known_placeholders = {"change-me-in-production", "dev-only-secret-change-me"}
+    known_placeholders = {
+        "change-me-in-production",
+        "dev-only-secret-change-me",
+    }
     if settings.jwt_secret in known_placeholders:
         raise RuntimeError(
             "JWT_SECRET must be overridden outside development. "

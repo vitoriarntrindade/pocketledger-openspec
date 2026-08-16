@@ -88,6 +88,7 @@ if TYPE_CHECKING:
     from app.models.transaction import Transaction  # Only for type checking
     from app.models.category import Category
 
+
 class User:
     transactions: Mapped[list["Transaction"]] = relationship(...)
 ```

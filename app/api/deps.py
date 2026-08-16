@@ -23,9 +23,7 @@ def get_current_user(
     try:
         user_id = decode_access_token(credentials.credentials)
     except jwt.PyJWTError as err:
-        raise UnauthorizedError(
-            "Invalid or expired access token."
-        ) from err
+        raise UnauthorizedError("Invalid or expired access token.") from err
     user = db.get(User, user_id)
     if user is None:
         raise UnauthorizedError("Invalid or expired access token.")

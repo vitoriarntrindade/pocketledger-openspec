@@ -31,7 +31,9 @@ app = FastAPI(
     openapi_url="/openapi.json" if docs_enabled else None,
 )
 
-cors_origins = [o.strip() for o in settings.cors_allowed_origins.split(",") if o.strip()]
+cors_origins = [
+    o.strip() for o in settings.cors_allowed_origins.split(",") if o.strip()
+]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origins,
@@ -53,6 +55,8 @@ app.include_router(transactions.router)
 app.include_router(summary.router)
 app.include_router(health.router)
 
-Instrumentator().instrument(app).expose(app, endpoint="/metrics", include_in_schema=False)
+Instrumentator().instrument(app).expose(
+    app, endpoint="/metrics", include_in_schema=False
+)
 
 configure_tracing(app)

@@ -19,7 +19,9 @@ def configure_tracing(app: FastAPI) -> None:
 
     resource = Resource.create({SERVICE_NAME: settings.service_name})
     provider = TracerProvider(resource=resource)
-    exporter = OTLPSpanExporter(endpoint=settings.otel_exporter_otlp_endpoint, insecure=True)
+    exporter = OTLPSpanExporter(
+        endpoint=settings.otel_exporter_otlp_endpoint, insecure=True
+    )
     provider.add_span_processor(BatchSpanProcessor(exporter))
     trace.set_tracer_provider(provider)
 
