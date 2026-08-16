@@ -48,6 +48,17 @@ jobs:
       - name: Security scan
         run: bandit -c pyproject.toml -q -r app
 
+      # The same script the local gate calls, so the two cannot drift.
+      - name: Secret scan
+        run: scripts/scan-secrets.sh
+
+      # pre-commit is the irreversibility layer, and it only binds a
+      # developer who ran `pre-commit install`. Running it here binds the
+      # remote too, so a private key committed by someone who skipped the
+      # install is still caught before a merge.
+      - name: Commit-time protections
+        run: pre-commit run --all-files
+
   tests:
     name: Tests and coverage
     runs-on: ubuntu-latest

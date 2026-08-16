@@ -95,9 +95,44 @@ known-first-party = ["app"]
 "__init__.py" = ["F401", "F403"]
 # Tests assert against literals, use fixtures that shadow names, and legitimately
 # contain credential-shaped strings that are not real secrets.
-"tests/*" = ["F401", "F811", "S101", "S105", "S106"]
-# FastAPI's dependency injection idiom is a function call in an argument default.
-"app/api/**" = ["B008"]
+# S603/S607: the workflow-guard tests must run the guards and the SessionStart
+# hook as real processes, with git resolved from PATH and script paths built
+# from a pytest temporary directory. That is the same deliberate choice already
+# granted to scripts/* below, and the inputs are test literals, not user data.
+"tests/*" = [
+    "F401",
+    "F811",
+    "S101",
+    "S105",
+    "S106",
+    "S107",
+    "S603",
+    "S607",
+]
+# B008: FastAPI's dependency injection idiom is a function call in an argument
+#   default, so this rule fires on every correctly written endpoint.
+# A002: `type` is part of the public query-string contract for transactions.
+#   Renaming the parameter to satisfy the linter would be a breaking API
+#   change. The service layer uses `type_` internally, so the shadowing is
+#   confined to the HTTP boundary where the name is required.
+"app/api/**" = ["B008", "A002"]
+# S105 flags any assignment whose name contains "secret" or "token". Both
+# occurrences here are false positives: `jwt_secret` holds a placeholder that
+# `assert_production_ready` refuses to start with outside development, and
+# `token_type = "bearer"` is the OAuth token-type literal, not a credential.
+"app/core/config.py" = ["S105"]
+"app/schemas/auth.py" = ["S105"]
+# UP042 suggests enum.StrEnum. That is not a safe swap here: StrEnum changes
+# __str__ from "TransactionType.income" to "income", which is observable
+# through serialisation and formatting. Making that change belongs in a
+# change that can specify and test the new behaviour, not in one whose
+# stated goal is to alter no behaviour at all.
+"app/models/enums.py" = ["UP042"]
+# BLE001: the readiness probe catches broadly on purpose. Any failure at all
+# means the instance cannot serve traffic, and a 503 is more useful to an
+# orchestrator than letting a driver or configuration error escape as a 500.
+# The exception is turned into the response, not swallowed.
+"app/api/routers/health.py" = ["BLE001"]
 # Workflow tooling resolves git and docker from PATH on purpose: hard-coding
 # absolute binary paths would break across machines and CI images.
 "scripts/*" = ["S603", "S607"]

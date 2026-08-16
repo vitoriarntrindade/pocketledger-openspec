@@ -38,12 +38,11 @@ Todas as mudanças vivem em `openspec/changes/`:
 
 ```
 openspec/changes/
-├── active/              # Mudanças em progresso
-│   └── YYYY-MM-DD-{tipo}-{slug}/
-│       ├── proposal.md  # Motivação, contexto, requisitos
-│       ├── design.md    # Decisões técnicas, trade-offs
-│       ├── tasks.md     # Plano de trabalho (checklist)
-│       └── specs/       # Especificações (se aplicável)
+├── YYYY-MM-DD-{tipo}-{slug}/  # Mudanças em progresso
+│   ├── proposal.md  # Motivação, contexto, requisitos
+│   ├── design.md    # Decisões técnicas, trade-offs
+│   ├── tasks.md     # Plano de trabalho (checklist)
+│   └── specs/       # Especificações (se aplicável)
 │
 └── archive/             # Mudanças finalizadas
     └── YYYY-MM-DD-{tipo}-{slug}/
@@ -68,11 +67,8 @@ Use um destes prefixos no diretório:
 ### 1. Criar uma Mudança
 
 ```bash
-# Crie o diretório da mudança (data + tipo + slug descritivo)
-mkdir -p openspec/changes/active/2026-08-14-feature-audit-logging
-
-# Crie os arquivos iniciais
-touch openspec/changes/active/2026-08-14-feature-audit-logging/{proposal,design,tasks}.md
+# Crie a mudança (data + tipo + slug descritivo, templates incluídos)
+openspec new change audit-logging
 
 # Crie a branch correspondente
 git checkout -b feature/audit-logging
@@ -224,7 +220,7 @@ docker compose up -d
 curl http://localhost:8000/api/v1/...
 
 # Se tudo passar, comite a mudança
-git add openspec/changes/active/2026-08-14-feature-audit-logging/
+git add openspec/changes/2026-08-14-feature-audit-logging/
 git commit -m "Update tasks: mark audit logging middleware as done"
 ```
 
@@ -237,7 +233,7 @@ git push origin feature/audit-logging
 # Crie um rascunho de PR (NÃO o mescle ainda)
 gh pr create --draft \
   --title "Feature: Audit logging" \
-  --body "$(cat openspec/changes/active/2026-08-14-feature-audit-logging/proposal.md)"
+  --body "$(cat openspec/changes/2026-08-14-feature-audit-logging/proposal.md)"
 ```
 
 **Importante:** Deixe o PR em **rascunho** até você (ou o time) revisarem e aprovarem.
@@ -276,9 +272,8 @@ git push origin --delete feature/audit-logging
 Após mesclar:
 
 ```bash
-# Mova de active para archive
-mv openspec/changes/active/2026-08-14-feature-audit-logging \
-   openspec/changes/archive/2026-08-14-feature-audit-logging
+# Arquive a mudança e atualize as specs principais
+openspec archive 2026-08-14-feature-audit-logging
 
 # Commit o arquivo
 git add openspec/changes/archive/
@@ -320,19 +315,21 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 
 ---
 
-## Hooks Git Automáticos
+## Hooks Automáticos
 
-Para automatizar partes do fluxo, coloque scripts em `.claude/hooks/`:
+A automação real deste projeto vive em `.claude/settings.json`, que liga
+eventos do agente (`PreToolUse`, `PostToolUse`, `SessionStart`) a scripts em
+`scripts/`: um guard de segurança antes de comandos Bash, formatação
+automática depois de cada edição, e um resumo de branch/tarefas no início da
+sessão. Detalhes em
+[`docs/agentic-development.md`](../agentic-development.md#hooks--the-deterministic-layer).
 
-### `.claude/hooks/pre-commit`
+Separadamente, `.pre-commit-config.yaml` na raiz do projeto guarda apenas
+contra dano irreversível no momento do commit (segredos, arquivos grandes,
+conflitos de merge não resolvidos); instale com `make install`.
 
-Valida que `tasks.md` está atualizado antes de commitar.
-
-### `.claude/hooks/post-merge`
-
-Move mudança para archive se todas as tarefas estão marcadas.
-
-**Nota:** Esses hooks são opcionais; você controla o fluxo manualmente.
+Não existe hoje um hook automático que arquive mudanças completas — arquivar
+é um passo manual (`openspec archive <nome>`).
 
 ---
 
@@ -421,7 +418,7 @@ Para tornar isso mais fluido, considere usar:
 
 ### P: Posso descartar uma mudança sem arquivar?
 
-**R:** Sim. Simplesmente delete o diretório em `openspec/changes/active/` e a branch. Nenhuma mudança foi mesclada, então não há histórico para manter.
+**R:** Sim. Simplesmente delete o diretório em `openspec/changes/<nome>/` e a branch. Nenhuma mudança foi mesclada, então não há histórico para manter.
 
 ---
 
@@ -429,11 +426,11 @@ Para tornar isso mais fluido, considere usar:
 
 | Etapa | Comando | Saída |
 |-------|---------|-------|
-| **Criar** | `mkdir openspec/changes/active/DATE-TYPE-slug && git checkout -b type/slug` | Branch pronta |
+| **Criar** | `openspec new change <slug> && git checkout -b type/slug` | Branch pronta |
 | **Planejar** | Escrever `proposal.md`, `design.md`, `tasks.md` | Design validado |
 | **Implementar** | Fazer commits, atualizar `tasks.md` | Branch com código |
-| **Testar** | `pytest`, testes manuais | Código validado |
+| **Testar** | `make test`, testes manuais | Código validado |
 | **Revisar** | `gh pr create --draft` | PR em rascunho |
 | **Aprovar** | `gh pr ready` e revisão completa | PR aprovado |
 | **Mesclar** | `gh pr merge --squash` | Main atualizada |
-| **Arquivar** | `mv active/ archive/` | Histórico preservado |
+| **Arquivar** | `openspec archive <nome>` | Histórico preservado |

@@ -6,11 +6,13 @@ freedom inside the working directory, refusal outside it. It is the
 filesystem half of the same principle the shell guard applies to commands —
 autonomy is worth having only if its blast radius is known.
 
-Two things are refused:
+Three things are refused:
 
 * writing to a path outside the repository, which is how an agent would
   reach configuration, credentials or another project by accident;
-* writing to real secret material.
+* writing to real secret material;
+* writing inside `.git`, where configuration and hooks are executable in
+  everything but name.
 
 The secret check is written to distinguish, rather than to pattern-match on
 the word "env". ``.env.example`` is the documented template that every
@@ -31,24 +33,52 @@ import sys
 
 # Real credential material, as opposed to templates and fixtures.
 SECRET_FILENAMES = (
-    ".env",
-    ".env.local",
-    ".env.production",
-    ".env.prod",
     ".netrc",
     ".pypirc",
+    ".npmrc",
+    ".pgpass",
+    ".git-credentials",
     "credentials",
+    "credentials.json",
+    "service-account.json",
     "id_rsa",
+    "id_dsa",
+    "id_ecdsa",
     "id_ed25519",
 )
 
-SECRET_SUFFIXES = (".pem", ".key", ".p12", ".pfx", ".keystore", ".jks")
+# Matched against every dotted component after the first, because a backup
+# of a private key is still a private key: `server.pem.bak` slipped past a
+# check that only looked at the final suffix.
+SECRET_SUFFIXES = frozenset(
+    {"pem", "key", "p12", "pfx", "ppk", "p8", "jks", "keystore", "asc", "gpg"}
+)
+
+# A real environment file is any `.env`, with or without a suffix, that is
+# not a template. Enumerating the suffixes left `.env.dev` and `.env.secret`
+# writable, and the set of names people invent is open-ended. The Bash guard
+# applies the same rule to reads, and a test holds the two to one answer.
+ENV_FILE = re.compile(r"^\.env(?:\.[\w.-]+)?$")
+ENV_TEMPLATE_SUFFIXES = (".example", ".sample", ".template", ".dist")
 
 # Templates and fixtures that must stay writable even though their names
 # resemble secret material.
 SAFE_PATTERN = re.compile(
     r"(\.example$|\.sample$|\.template$|/fixtures?/|/tests?/)",
 )
+
+# git's own directory. Writing here is not editing the project: `core.pager`
+# and the hook scripts both execute arbitrary commands, so a write to
+# `.git/config` is a write to the machine.
+#
+# The guard scripts, settings.json and .pre-commit-config.yaml are
+# deliberately *not* protected this way. They are ordinary source — they
+# are being edited as reviewed work right now, and they land in a diff a
+# human reads — so a mechanical self-write ban would block legitimate work
+# while stopping nobody who simply chose not to call the tool. What holds
+# them is review and git history, recorded here so the choice is visible
+# rather than assumed.
+GIT_DIRECTORY = os.sep + ".git" + os.sep
 
 
 def repo_root() -> str:
@@ -71,24 +101,43 @@ def repo_root() -> str:
     return os.path.realpath(os.getcwd())
 
 
+def is_env_file(name: str) -> bool:
+    """Report whether a filename denotes a real environment file."""
+    if not ENV_FILE.match(name):
+        return False
+    return not name.endswith(ENV_TEMPLATE_SUFFIXES)
+
+
 def is_secret(path: str) -> bool:
     """Report whether a path denotes real credential material."""
     if SAFE_PATTERN.search(path):
         return False
     name = os.path.basename(path)
-    if name in SECRET_FILENAMES:
+    if is_env_file(name) or name in SECRET_FILENAMES:
         return True
-    return any(name.endswith(suffix) for suffix in SECRET_SUFFIXES)
+    return any(
+        part in SECRET_SUFFIXES for part in name.lower().split(".")[1:]
+    )
 
 
 def decide(path: str, root: str) -> tuple[str, str] | None:
-    """Return ``(verdict, reason)`` for a target path, or ``None`` to allow."""
+    """Return ``(verdict, reason)`` for a path, or ``None`` to allow it."""
     if not path:
         return None
 
     resolved = os.path.realpath(
         path if os.path.isabs(path) else os.path.join(root, path)
     )
+
+    if GIT_DIRECTORY in resolved + os.sep:
+        return (
+            "deny",
+            (
+                "'.git' holds the repository's own configuration and hooks, "
+                "both of which execute commands. Change the working tree "
+                "and let git record it."
+            ),
+        )
 
     if resolved != root and not resolved.startswith(root + os.sep):
         return (
@@ -123,8 +172,20 @@ def main() -> int:
     path = (
         tool_input.get("file_path") or tool_input.get("notebook_path") or ""
     )
+    if not isinstance(path, str):
+        return 0
 
-    verdict = decide(path, repo_root())
+    # Failing open on a payload the guard cannot read is deliberate; failing
+    # open on a traceback is not the same thing. An unexpected path — an
+    # embedded NUL, a name longer than the filesystem allows — used to exit
+    # 1, which Claude Code treats as "carry on", so an odd input disabled
+    # the boundary instead of the tool call.
+    try:
+        verdict = decide(path, repo_root())
+    except (OSError, ValueError) as err:
+        print(f"guard-write could not decide: {err}", file=sys.stderr)
+        return 0
+
     if verdict is None:
         return 0
 

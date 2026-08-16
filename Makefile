@@ -14,15 +14,20 @@ install:  ## Install runtime and development dependencies
 db:  ## Start PostgreSQL and ensure the test database exists
 	scripts/dev-db.sh
 
-test: db  ## Run the test suite
-	OTEL_ENABLED=false ENVIRONMENT=test \
-	JWT_SECRET=test-only-secret-not-used-outside-tests \
-		$(PY) -m pytest
-
-test-cov: db  ## Run the test suite with coverage and the 95% floor
+# Coverage flags live here rather than in pytest's addopts so that running a
+# single test is not measured against a whole-project floor. Every entry
+# point that runs the *suite* passes them, so the floor applies wherever the
+# suite is invoked from.
+test: db  ## Run the whole suite with coverage and the 95% floor
 	OTEL_ENABLED=false ENVIRONMENT=test \
 	JWT_SECRET=test-only-secret-not-used-outside-tests \
 		$(PY) -m pytest --cov=app --cov-report=term-missing
+
+test-cov: db  ## Run the suite and write the HTML coverage report to htmlcov/
+	OTEL_ENABLED=false ENVIRONMENT=test \
+	JWT_SECRET=test-only-secret-not-used-outside-tests \
+		$(PY) -m pytest --cov=app --cov-report=term-missing \
+			--cov-report=html
 
 lint:  ## Lint with ruff
 	$(PY) -m ruff check .

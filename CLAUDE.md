@@ -148,7 +148,9 @@ already decided.
 | `openspec/changes/` | in-flight changes; `archive/` holds completed ones |
 | `scripts/` | deterministic workflow tooling and guards |
 | `.claude/agents/` | specialised subagents and their model routing |
-| `.claude/skills/` | reusable competence, loaded on demand |
+| `.codex/agents/` | Codex subagent profiles and hook configuration |
+| `.agents/skills/` | Codex skills, loaded on demand |
+| `.claude/skills/` | Claude Code mirror of the shared skills |
 | `docs/agentic-development.md` | how this whole workflow fits together |
 
 ## Commands
@@ -157,6 +159,6 @@ already decided.
 make quality     the definition of done — run before reporting anything complete
 make fast        static checks only, for the edit loop
 make fix         apply safe autofixes, then the full gate
-make test        run the suite (starts the database)
+make test        run the suite with coverage (starts the database)
 make db          start PostgreSQL and create the test database
 ```

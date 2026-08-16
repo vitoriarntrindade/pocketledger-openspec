@@ -26,8 +26,8 @@ Você já tem tudo pronto! Os arquivos necessários já foram criados:
 ```
 ✅ Documentação de workflow completa
 ✅ Templates reutilizáveis
-✅ Script de automação (new-change.sh)
-✅ Skill do Claude Code (/new-development-change)
+✅ OpenSpec CLI (openspec new change)
+✅ Skill do Claude Code (/spec-driven-workflow)
 ✅ Exemplo real de mudança arquivada
 ✅ Convenções padronizadas
 ```
@@ -55,9 +55,9 @@ mkdir -p .git/hooks
 # Hook: validar tasks.md antes de commit
 cat > .git/hooks/pre-commit << 'EOF'
 #!/bin/bash
-# Validate that tasks.md exists in active changes before committing
-if ls openspec/changes/active/*/tasks.md &>/dev/null; then
-  echo "✓ Tasks.md found in active changes"
+# Validate that tasks.md exists in in-progress changes before committing
+if ls openspec/changes/*/tasks.md &>/dev/null; then
+  echo "✓ Tasks.md found in in-progress changes"
 fi
 exit 0
 EOF
@@ -70,15 +70,15 @@ chmod +x .git/hooks/pre-commit
 Agora que tudo está setupado, criar uma nova feature seria:
 
 ```bash
-# Opção 1: Script interativo
-bash .claude/scripts/new-change.sh
+# Opção 1: OpenSpec CLI
+openspec new change your-idea
 
 # Opção 2: Claude Code skill
-/new-development-change
+/spec-driven-workflow
 
 # Opção 3: Manual (para entender o padrão)
-mkdir -p openspec/changes/active/2026-08-15-feature-your-idea
-cp .claude/templates/change-*.md openspec/changes/active/2026-08-15-feature-your-idea/
+mkdir -p openspec/changes/2026-08-15-feature-your-idea
+cp .claude/templates/change-*.md openspec/changes/2026-08-15-feature-your-idea/
 git checkout -b feature/your-idea
 # Editar templates, implementar, etc
 ```
@@ -112,17 +112,12 @@ pocketledger-openspec/
 │   │   ├── change-design.md
 │   │   └── change-tasks.md
 │   │
-│   ├── scripts/
-│   │   └── new-change.sh        # Script para criar mudanças
-│   │
-│   ├── skills/
-│   │   └── new-development-change/SKILL.md
-│   │
-│   └── change-types.yaml        # Convenções padronizadas
+│   └── skills/
+│       └── spec-driven-workflow/SKILL.md
 │
 ├── openspec/
 │   ├── changes/
-│   │   ├── active/              # Em andamento
+│   │   ├── 2026-08-15-feature-your-idea/  # Em andamento
 │   │   └── archive/
 │   │       └── 2026-08-14-security-jwt-hardening/
 │   │           ├── proposal.md
@@ -146,7 +141,7 @@ pocketledger-openspec/
 Para criar a próxima feature (ex: audit logging):
 
 ```bash
-bash .claude/scripts/new-change.sh
+openspec new change audit-logging
 # → feature
 # → audit-logging
 # → ✓ Pronto para documentar e implementar
@@ -158,7 +153,7 @@ Se outras pessoas vão contribuir, compartilhe:
 
 1. **Link para** `WORKFLOW-QUICK-START.md` — Resumo rápido
 2. **Link para** `WORKFLOW-EXAMPLE.md` — Exemplo prático
-3. **Comando a executar** — `bash .claude/scripts/new-change.sh`
+3. **Comando a executar** — `openspec new change <nome>`
 
 Eles vão seguir o mesmo padrão, resultando em:
 - Documentação consistente
@@ -180,17 +175,17 @@ Resultado: Compreensão completa do projeto e suas decisões!
 
 ## Troubleshooting
 
-**P: Script `new-change.sh` não roda?**
-R: Verifique permissões: `chmod +x .claude/scripts/new-change.sh`
+**P: `openspec new change` não roda?**
+R: Confirme que o OpenSpec CLI está instalado e que `openspec/` existe na raiz do projeto.
 
-**P: Skill `/new-development-change` não aparece?**
+**P: Skill `/spec-driven-workflow` não aparece?**
 R: Reinicie Claude Code ou verifique que está no diretório certo
 
 **P: Não consigo fazer commit?**
 R: Rode `git config user.email "seu@email.com" && git config user.name "Seu Nome"`
 
 **P: Posso customizar os tipos de mudança?**
-R: Sim! Edite `.claude/change-types.yaml` e atualize os templates conforme necessário
+R: Sim! Edite a taxonomia em `CLAUDE.md` §2 e §4 e atualize os templates conforme necessário
 
 ## Resumo
 
@@ -206,7 +201,7 @@ Você tem agora um workflow de desenvolvimento **padronizado, documentado, e esc
 Próximo passo: comece a usar em sua próxima feature!
 
 ```bash
-bash .claude/scripts/new-change.sh
+openspec new change <nome>
 ```
 
 Boa sorte! 🚀

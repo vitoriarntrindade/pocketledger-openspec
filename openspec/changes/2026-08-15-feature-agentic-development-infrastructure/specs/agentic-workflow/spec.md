@@ -101,6 +101,20 @@ succeeds.
 - **THEN** the change is not reported as done
 - **AND** the failure is diagnosed and fixed rather than suppressed
 
+#### Scenario: The secret scan runs at two breadths
+- **WHEN** the secret scan runs over the tracked files
+- **THEN** issued key material — a private key block, a forge token, an AWS
+  access key id — is matched case-insensitively in every file, Markdown and
+  `openspec/` artifacts included, since those are the largest agent-written
+  surface and a pasted token lands there
+- **AND** credential assignments and connection strings carrying an inline
+  password are matched in source, where prose that legitimately describes an
+  assignment is exempt
+- **AND** a tracked `.env` file fails the scan whatever it contains
+- **AND** a placeholder, a fixture and a local development credential pointing
+  at the container database do not fail it, because a scanner that cries wolf
+  is one people learn to ignore
+
 #### Scenario: Gate prerequisites are established automatically
 - **GIVEN** the test database is not running
 - **WHEN** the quality command is invoked
@@ -118,36 +132,145 @@ threshold, and SHALL NOT satisfy that threshold by lowering it or by deleting te
 - **AND** the quality gate fails
 
 #### Scenario: The threshold is enforced by configuration, not by convention
-- **WHEN** the test suite is invoked through any entry point, including CI
+- **WHEN** the test suite is invoked through a project entry point — the
+  `make` test targets, the quality gate or CI
 - **THEN** the 95 percent floor is applied from project configuration
+- **AND** no entry point passes a flag that lowers or disables it
+
+#### Scenario: An ad-hoc single-test run is not measured against the floor
+- **GIVEN** a single test is invoked directly with pytest during an edit loop
+- **WHEN** that invocation finishes
+- **THEN** coverage is not measured and the floor is not applied, so the run
+  reports the test's own result rather than a coverage failure
+- **AND** the change is still not reportable as done until the gate, which
+  does apply the floor, passes
 
 ### Requirement: Deterministic Protection Of Dangerous Operations
 
-The system SHALL block irreversible or out-of-scope operations before they execute, using
-deterministic checks rather than model judgement, covering at minimum destructive git
-operations, privilege escalation, recursive deletion outside the repository, and access to
-credential material.
+The system SHALL block irreversible or out-of-scope operations before they
+execute, using deterministic checks rather than model judgement, covering at
+minimum destructive git operations, privilege escalation, recursive deletion
+outside the repository, tree-walking search rooted outside it, writes into the
+repository's own git directory, and access to credential material.
+
+Those checks SHALL decide by where a path resolves, not by how it is spelled:
+a target is unquoted, `${VAR}`-normalised, expanded, resolved and then
+compared against the repository root. Quoting, git global options and trailing
+comments SHALL NOT change a verdict.
 
 #### Scenario: A destructive history rewrite is blocked
-- **WHEN** `git reset --hard` or a comparable destructive history operation is attempted
+- **WHEN** `git reset --hard` or a comparable destructive history operation is
+  attempted
 - **THEN** the command is blocked before execution
 
 #### Scenario: Privilege escalation is blocked
-- **WHEN** a command invoking `sudo` is attempted
+- **WHEN** a command invoking `sudo` or `doas` is attempted, including behind
+  environment assignments (`FOO=bar sudo …`) or a wrapper (`xargs sudo …`)
 - **THEN** the command is blocked before execution
+- **AND** the same word appearing inside prose or a search pattern is not
+  treated as an invocation
+
+#### Scenario: Recursive deletion is judged by where the target resolves
+- **WHEN** a recursive deletion targets a path outside the repository, however
+  it is spelled — `"$HOME"`, `${HOME}`, `"/etc"`, `..`, `../*`, or the
+  repository itself reached from its parent as in `cd .. && rm -rf
+  <repository>`
+- **THEN** the command is blocked before execution
+- **AND** recursive deletion of a path that resolves inside the repository is
+  permitted, since that is ordinary work
+
+#### Scenario: A deletion target only the shell can resolve is refused
+- **GIVEN** the value of a deletion target is not knowable before the shell
+  runs it
+- **WHEN** the deletion is attempted
+- **THEN** it is refused rather than guessed at
+
+#### Scenario: Search rooted outside the repository is blocked
+- **WHEN** a tree-walking tool — `find`, `grep`, `rg`, `ag`, `ack` or `fd` —
+  is rooted at a path outside the repository, with or without `-exec` or
+  `-delete`, through an executable path, or through a mode with no pattern
+  such as `rg --files`
+- **THEN** the command is blocked before execution
+- **AND** the block holds even though those tools are in the permission
+  allowlist, since a search rooted at `$HOME` is a credential read with extra
+  steps
+- **AND** `find -files0-from` is refused because its roots cannot be known
+  without reading another file before the command runs
+
+#### Scenario: A search pattern is not treated as a search root
+- **WHEN** a tree-walking search has a pattern that resembles an outside path,
+  such as `grep -n "/etc/passwd" README.md`, `rg "~" docs/` or
+  `grep -r "foo /etc" docs/`, while every positional search root resolves
+  inside the repository
+- **THEN** the command is permitted
+- **AND** the guard identifies search roots according to the invoked tool's
+  argument grammar and shell quoting rather than treating every non-option
+  argument as a path
 
 #### Scenario: Writing outside the repository is blocked
-- **WHEN** a file write targets a path outside the repository working directory
+- **WHEN** a file write targets a path outside the repository working
+  directory
 - **THEN** the write is blocked before it occurs
 
+#### Scenario: Writing inside the git directory is blocked
+- **WHEN** a write targets a path inside `.git/`
+- **THEN** the write is blocked before it occurs
+- **AND** the reason given is that git configuration and hooks execute
+  commands, so they are machine configuration rather than project source
+
 #### Scenario: Reading private credentials is blocked
-- **WHEN** a command or file read targets SSH keys, cloud credentials, or a real environment file
+- **WHEN** a command or file read targets a path that resolves inside a
+  credential directory — `~/.ssh`, `~/.aws`, `~/.gnupg`, `~/.kube`,
+  `~/.docker`, `~/.claude`, `~/.config/gcloud`, `~/.config/gh`,
+  `~/.config/git`, `~/.local/share/keyrings` — or a known credential file, or
+  a real environment file
 - **THEN** the operation is blocked before it occurs
+- **AND** the spelling of the path does not change the verdict: `~/.aws`,
+  `$HOME/.aws`, `${HOME}/.aws`, the quoted form and the absolute form are one
+  rule
+- **AND** a stored forge token is treated as credential material in its own
+  right, because reading it would let an agent publish through the API and
+  walk past the human acceptance gate that `gh pr *` sits behind
+
+#### Scenario: Quoting does not bypass a rule
+- **WHEN** a command hides a blocked operation behind quotes, a git global
+  option or a trailing comment — `gh pr 'merge' 1`, `git -c user.name=x push
+  origin main`, `pip install requests # uses .venv`
+- **THEN** the rules are evaluated against a view of the command with quotes
+  removed, git global options folded away and trailing comments stripped
+- **AND** the verdict is the same as for the unadorned form
+
+#### Scenario: A command that switches branch is judged on where it lands
+- **GIVEN** a command changes branch before committing or pushing, as in `git
+  switch main && git commit -m x`
+- **WHEN** the guard evaluates it
+- **THEN** the verdict is taken from the branch the work would land on, not
+  the branch checked out when the command was submitted
 
 #### Scenario: Safe example files remain accessible
-- **GIVEN** a file is an example or fixture rather than real credential material
-- **WHEN** `.env.example` is read or written
+- **GIVEN** a file is a template or fixture rather than real credential
+  material
+- **WHEN** `.env.example` or another template suffix is read or written, or
+  the documented first setup step copies that template to `.env`
 - **THEN** the operation is permitted
+- **AND** a real environment file is still recognised by shape rather than by
+  an enumerated list, so `.env.dev` and `.env.secret` are blocked
+
+#### Scenario: An unreadable payload leaves the operator's work alone
+- **GIVEN** the guard receives a payload it cannot parse, or a path that
+  cannot be resolved
+- **WHEN** it decides
+- **THEN** it permits the operation deliberately and reports the reason on
+  standard error
+- **AND** it does not exit on an unhandled traceback, which would disable the
+  boundary while looking like an ordinary permit
+
+#### Scenario: The guards run without the project virtualenv
+- **GIVEN** a fresh clone on which `make install` has not yet run
+- **WHEN** a guarded tool call is made
+- **THEN** the guard executes, because the hook invokes the system interpreter
+  rather than the virtualenv one
+- **AND** the boundary is never silently inert
 
 ### Requirement: Independent Verification
 
@@ -210,6 +333,47 @@ pull request, nor merge, until a human has explicitly accepted the change.
 - **WHEN** a pull request exists
 - **THEN** the agent does not merge it under any circumstance
 
+### Requirement: Session Workflow Context
+
+The system SHALL report the workflow state at the start of every session — the
+checked-out branch, whether that branch is protected, the number of
+uncommitted files, and every open OpenSpec change with its completed and total
+task counts — and that report SHALL read state only, running no gate, starting
+no container and making no network call.
+
+#### Scenario: A session begins with the workflow state stated
+- **WHEN** a session starts
+- **THEN** the branch, the uncommitted-file count and each open OpenSpec
+  change with its task progress are reported before the first action is taken
+- **AND** the report restates that the definition of done is the quality gate
+  and that no pull request is opened before human acceptance
+
+#### Scenario: Starting on the default branch is flagged
+- **GIVEN** the checked-out branch is `main` or `master`
+- **WHEN** a session starts
+- **THEN** the report marks the branch as protected
+- **AND** it states that a feature branch is created before any implementation
+
+#### Scenario: The absence of open changes is stated explicitly
+- **GIVEN** `openspec/changes/` contains no change directory other than
+  `archive`
+- **WHEN** a session starts
+- **THEN** the report states that there are no active changes
+- **AND** the absence is reported rather than left as silence, which is
+  indistinguishable from the report having failed
+
+#### Scenario: The report reads state and nothing else
+- **WHEN** the session-start report runs
+- **THEN** it executes no quality gate, starts no container and makes no
+  network call
+- **AND** it does not modify the working tree
+
+#### Scenario: A failure to report does not block the session
+- **GIVEN** a command the report depends on is unavailable or returns an error
+- **WHEN** a session starts
+- **THEN** the report exits without failing the session
+- **AND** the session proceeds
+
 ### Requirement: Cost-Proportional Model Routing
 
 The system SHALL route work to the least capable mechanism sufficient for it, preferring
@@ -235,3 +399,31 @@ architecture, security, cross-cutting change and final verification.
 - **WHEN** the task is retried
 - **THEN** the retry uses information obtained from the failed attempt
 - **AND** repeated failure escalates to a more capable model rather than looping unchanged
+
+### Requirement: Cross-LLM Skill Compatibility
+
+The system SHALL version the shared project skills for both Codex under
+`.agents/skills/` and Claude Code under `.claude/skills/`, and SHALL detect an
+unrecorded divergence between their common files. It SHALL version the seven
+agent profiles and guard wiring needed by each runtime.
+
+#### Scenario: Both coding agents receive the shared workflow
+- **WHEN** a developer clones the repository for either Codex or Claude Code
+- **THEN** that agent finds the project's shared skills in its native skill
+  root without relying on personal machine configuration
+
+#### Scenario: Intentional differences are bounded and documented
+- **WHEN** the compatibility test compares both skill roots
+- **THEN** common files are byte-identical except the native constitution
+  pointer in `spec-driven-workflow/SKILL.md`
+- **AND** Codex-only `source-command-opsx-*` wrappers are the only files that
+  exist exclusively under `.agents/skills/`
+
+#### Scenario: Both runtimes carry their agent configuration
+- **WHEN** the compatibility test inspects the versioned configuration
+- **THEN** Codex has its `hooks.json` and the same seven role names under
+  `.codex/agents/` that Claude Code has under `.claude/agents/`
+- **AND** no agent requires personal machine configuration to find the
+  workflow's specialised review roles
+- **AND** Codex hook commands are resolved from the repository root rather
+  than through Claude Code environment variables

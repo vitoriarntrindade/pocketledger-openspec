@@ -78,7 +78,7 @@ something the others cannot.
 
 | Mechanism | Nature | Jurisdiction |
 |---|---|---|
-| **`CLAUDE.md`** | always-loaded rules | the permanent constitution — what is always true |
+| **`AGENTS.md` / `CLAUDE.md`** | always-loaded rules | Codex / Claude Code constitutions |
 | **Skills** | loaded on demand | reusable competence — how to do a kind of work well |
 | **Subagents** | isolated context | specialisation and independent judgement |
 | **Hooks** | deterministic, pre-execution | guarantees that must not depend on the model |
@@ -87,12 +87,12 @@ something the others cannot.
 | **CI** | deterministic, at merge | the remote check that does not trust the agent |
 | **OpenSpec** | versioned artifacts | what the system must do, and the historical record |
 
-### `CLAUDE.md` — the constitution
+### Constitutions — `AGENTS.md` and `CLAUDE.md`
 
 Permanent, universal rules only: the definition of done, change
-classification, git discipline, code standards, the human gate. It is loaded
-on every turn, so every line in it costs context on work that may not need it.
-Tutorials do not belong there.
+classification, git discipline, code standards and the human gate. Codex loads
+`AGENTS.md`; Claude Code loads `CLAUDE.md`. They carry the same permanent
+rules for their respective runtimes, so tutorials do not belong in either.
 
 ### Skills — competence, loaded on demand
 
@@ -128,17 +128,84 @@ The important structural property: **`spec-verifier` is never the agent that
 implemented the change.** Whoever wrote the code already believes it is
 correct, and that belief is what makes self-verification worthless.
 
+### Cross-LLM skills
+
+The project versions the shared skills twice so either coding agent has the
+same workflow: Codex reads `.agents/skills/`, while Claude Code reads
+`.claude/skills/`. Shared files must remain byte-identical. Two differences
+are intentional: `spec-driven-workflow/SKILL.md` points to `AGENTS.md` for
+Codex and `CLAUDE.md` for Claude Code, and the six `source-command-opsx-*`
+compatibility wrappers exist only for Codex. The infrastructure test makes any
+other difference a failure. Codex profiles and hook configuration are versioned
+under `.codex/`; Claude Code uses `.claude/agents/` and
+`.claude/settings.json`. Both carry the same seven review roles and the
+workflow guards, so a clone can use either agent without personal setup.
+
 ### Hooks — the deterministic layer
 
 | Event | Runs | Enforces |
 |---|---|---|
-| `PreToolUse` (Bash) | `scripts/guard-bash.py` | no force push, no push to `main`, no destructive reset, no `sudo`, no delete outside the repo, no credential reads, no merge; asks before publishing |
-| `PreToolUse` (Edit/Write) | `scripts/guard-write.py` | no writes outside the repository, no writes to real secrets |
+| `PreToolUse` (Bash) | `scripts/guard-bash.py` | blocks irreversible git operations, privilege escalation, deletion or search outside the repository, credential reads, data-destroying commands and merging; asks before publishing |
+| `PreToolUse` (Edit/Write) | `scripts/guard-write.py` | blocks writes outside the repository, writes to real secrets, and writes inside `.git/` |
 | `PostToolUse` (Edit/Write) | `scripts/format-python.sh` | formats the one file just edited |
 | `SessionStart` | `scripts/session-context.sh` | states branch, open changes and task progress |
 
-Hooks are fast by design. The formatter touches a single file; the full suite
-runs in the gate, not on every keystroke.
+Two ideas do most of the work in `guard-bash.py`, and are worth stating
+precisely because they replaced an earlier, weaker approach:
+
+**Containment, not patterns.** A target is dangerous because of where it
+resolves, not how it is spelled. Deletion and search targets are unquoted,
+`${VAR}`-normalised, expanded and resolved against the repository root
+before comparison, so `rm -rf "$HOME"`, `${HOME}`, `"/etc"`, `..`,
+`../*` and `cd .. && rm -rf pocketledger-openspec` are all denied by the
+same rule — previously only a token literally starting with `/`, `~` or
+`$HOME` was seen at all. The same containment check covers search tools
+rooted outside the repository (`find`, `grep`, `rg`, `ag`, `ack`, `fd`):
+`find / -name id_rsa -exec cat {} +` used to be allowed and auto-approved,
+because those tools sit in the settings allowlist. The credential
+inventory is containment-based too — `~/.ssh`, `.aws`, `.gnupg`, `.kube`,
+`.docker`, `.claude`, `.config/gcloud`, `.config/gh`, `.config/git`,
+`.local/share/keyrings`, plus files such as `.git-credentials`, `.pgpass`,
+`.npmrc`, `.pypirc`, `credentials.json`, `service-account.json`,
+`/proc/*/environ` and key-material suffixes — which is precise enough that
+the repository's own `.claude/settings.json` stays readable even though
+`.claude` under `$HOME` is a protected directory.
+
+Search containment respects each command's argument grammar: the pattern in
+`grep -n "/etc/passwd" README.md` or `rg "~" docs/` is not a filesystem root.
+The guard resolves only actual roots — paths after the pattern for the
+grep-family tools, paths before `find` predicates, and paths after fd's
+optional pattern — so ordinary inspection remains available while searches
+rooted at `$HOME` or `/` are refused.
+
+**Prose, not quoting.** Rules run on a "code view" of the command with
+quote characters removed, git's global options folded away and trailing
+comments stripped, so `gh pr 'merge' 1` and
+`git -c user.name=x push origin main` are still caught rather than slipping
+past a rule keyed on the unquoted text. A command that changes branch
+before acting is judged on the branch it would end on, so
+`git switch main && git commit -m x` is denied. `.env` files are matched by
+shape — any `.env`, with or without a suffix, except `.example`, `.sample`,
+`.template` or `.dist` — rather than an enumerated list, in both this guard
+and `guard-write.py`.
+
+Both hooks are invoked as `python3` rather than the project's virtualenv
+interpreter, so a fresh clone is guarded before `make install` has run;
+previously they silently failed to spawn and the boundary was inert with no
+warning.
+
+What neither guard covers, deliberately: a path assembled at runtime
+(`K=~/.ssh/id_rsa; cat $K`), a path built inside an interpreter's own
+source (`python -c '...expanduser...'`), and `pkexec`. This is a boundary
+for an agent doing ordinary work, not a sandbox against an adversary — the
+irreversible cases it does cover are the ones ordinary work reaches by
+accident.
+
+The guard scripts themselves, `.claude/settings.json` and
+`.pre-commit-config.yaml` are deliberately **not** write-protected. They are
+ordinary source, edited as reviewed work like anything else in the
+repository, and they land in a diff a human reads; what holds them is
+review and git history, not a mechanical self-write ban.
 
 The guards are tested like application code, in
 `tests/test_agentic_infrastructure.py`, including the case that matters most in
@@ -261,7 +328,7 @@ destroys the record of what is still in flight.
 
 ## Troubleshooting
 
-**All 81 tests error with a connection failure.** PostgreSQL is not running.
+**Every test errors with a connection failure.** PostgreSQL is not running.
 `make db`, or just `make test`, which does it for you.
 
 **The suite takes four minutes and floods the output with retry warnings.**
@@ -293,7 +360,7 @@ the infrastructure work.
 
 ## Extending this
 
-- **A new rule that always applies** → `CLAUDE.md`
+- **A new rule that always applies** → update `AGENTS.md` and `CLAUDE.md`
 - **A repeatable way of working** → a skill
 - **A distinct evaluation criterion, or bulky output** → a subagent
 - **Something that must not depend on the model** → a hook or a script

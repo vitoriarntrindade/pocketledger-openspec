@@ -6,25 +6,30 @@ Este projeto segue as boas práticas Python definidas pela skill `/python-best-p
 
 ### Verificar Qualidade
 ```bash
-source .venv/bin/activate
-make check                    # Ruff + Flake8 + MyPy
-make lint                     # Apenas linters
-make type-check              # Apenas MyPy
+make quality                  # o gate completo: format, lint, typecheck,
+                               # testes, coverage, security, secret scan,
+                               # validação OpenSpec — a definição de pronto
+make fast                     # checks estáticos e rápidos (format, lint,
+                               # typecheck, secret scan, openspec validate),
+                               # sem testes — para o loop de edição
+make lint                     # só ruff
+make typecheck                # só mypy
 ```
 
 ### Auto-Corrigir Problemas
 ```bash
-source .venv/bin/activate
-make fix-all                 # Auto-fix tudo que conseguir
-ruff check app --fix         # Só ruff
-ruff format app              # Formatar código
+make fix                      # aplica autofixes seguros e roda o gate
+                               # completo em seguida
+ruff check . --fix            # só ruff
+ruff format .                 # formatar código
 ```
 
 ### Rodar Testes
 ```bash
-source .venv/bin/activate
-make test                    # Testes simples
-make test-cov               # Com coverage
+make test                    # Suite completa com coverage e o piso de 95%
+                              # (sobe o PostgreSQL antes)
+make test-cov                # Igual, e também grava o relatório HTML em
+                              # htmlcov/
 ```
 
 ---
@@ -141,66 +146,43 @@ from app.core.config import settings
 
 ---
 
-## ⚠️ Problemas Atuais
+## ⚠️ Status Atual
 
-### P0 - CRÍTICO
-1. **Type Mismatches** - ORM models sendo retornados como schemas
-   - Afeta: auth, transactions, categories, users routers
-   - Solução: `UserOut.model_validate(user)`
+O baseline de qualidade descrito em
+[`docs/reports/QUALITY_REPORT.md`](../reports/QUALITY_REPORT.md) — tipos
+incompatíveis (ORM vs. schema), imports circulares, linhas longas e exception
+chaining faltando — foi corrigido pela change
+`2026-08-15-refactor-python-quality-baseline` (commit `c5ab5bc`). `make
+quality` roda limpo: sem findings de ruff, mypy ou bandit.
 
-2. **Circular Imports** - models/user.py, transaction.py, category.py
-   - Solução: usar TYPE_CHECKING para imports circulares
-
-### P1 - IMPORTANTE
-3. **Linhas Muito Longas** - 73 linhas com >78 caracteres
-   - Afeta: routers, models, error_handlers
-   - Solução: quebrar em múltiplas linhas
-
-4. **Exception Chaining** - faltam `from err` em handlers
-   - Afeta: api/deps.py, services/category_service.py
-
----
-
-## 📊 Current Status
-
-```
-RUFF:  52 issues (12 fixados, 40 remanescentes)
-  • 28 B008 (FastAPI Depends - ACEITAR)
-  • 6  F821 (undefined names - CORRIGIR)
-  • 2  B904 (exception chain - CORRIGIR)
-
-FLAKE8: 73 E501 (linhas muito longas)
-  • Quebrar decoradores e long imports
-
-MYPY:  26 type errors
-  • 12 type mismatches (ORM vs Schema) - CRÍTICO
-  • 6  circular refs - IMPORTANTE
-  • 8  missing annotations - IMPORTANTE
-```
-
-Detalhes completos: [QUALITY_REPORT.md](QUALITY_REPORT.md)
+Qualquer nova violação encontrada por `make quality` deve ser corrigida na
+mesma change que a introduziu — ver CLAUDE.md §1: um gate falhando nunca é
+resolvido enfraquecendo o gate.
 
 ---
 
 ## 🔧 Configuração
 
 Já está pronta:
-- ✅ `pyproject.toml` - Ruff, MyPy, Coverage
-- ✅ `.flake8` - Flake8 config
+- ✅ `pyproject.toml` - Ruff (linter e formatter, autoridade única) e MyPy
 - ✅ `.pre-commit-config.yaml` - Git hooks
 - ✅ `Makefile` - Comandos úteis
 
+Não há um segundo arquivo de configuração de lint (`.flake8` ou similar):
+ruff substitui o flake8 por completo, incluindo a checagem de complexidade
+(regra `C901`).
+
 ### Setup Pre-commit
 ```bash
-source .venv/bin/activate
-pip install pre-commit
-pre-commit install
+make install
 ```
 
-Agora roda automaticamente:
-- Ruff lint & format
-- MyPy type checking
-- Flake8 validation
+O hook de pre-commit cobre apenas dano irreversível em tempo de commit —
+segredos, arquivos grandes, conflitos de merge não resolvidos e um `.env`
+real sendo commitado. Ele **não** roda ruff/mypy: essas checagens já rodam a
+cada edição do agente, em `make quality` e novamente na CI, então uma
+quarta cópia só tornaria o commit lento o bastante para as pessoas caírem no
+`--no-verify`.
 
 ---
 
@@ -217,17 +199,17 @@ Agora roda automaticamente:
 
 ### Auto-format Before Commit
 ```bash
-make fix-all && make check
+make fix
 ```
 
 ### Quick Type Check
 ```bash
-mypy app --ignore-missing-imports
+make typecheck
 ```
 
 ### View All Issues
 ```bash
-ruff check app --show-fixes
+ruff check . --show-fixes
 ```
 
 ### IDE Integration

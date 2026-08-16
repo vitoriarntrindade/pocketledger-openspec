@@ -11,9 +11,10 @@ Bem-vindo! Este é o centro de documentação do PocketLedger.
    funciona aqui: gates, agentes, hooks e o ciclo de vida de uma mudança
 3. **[standards/BEST_PRACTICES.md](standards/BEST_PRACTICES.md)** — padrões de código
 
-As regras permanentes do projeto ficam em **[`CLAUDE.md`](../CLAUDE.md)**, na
-raiz. Ele é a constituição: quando qualquer documento aqui discordar dele, ele
-vence.
+As regras permanentes do projeto ficam nas constituições na raiz:
+**[`AGENTS.md`](../AGENTS.md)** para Codex e
+**[`CLAUDE.md`](../CLAUDE.md)** para Claude Code. Quando qualquer documento
+aqui discordar da constituição do agente em uso, ela vence.
 
 ## 📂 Estrutura
 
@@ -74,8 +75,8 @@ make fix       # aplica autofixes seguros e roda o gate
 **Documentação:**
 
 - ✅ em `/docs/`, categorizada
-- ❌ nunca na raiz — exceto `README.md` e `CLAUDE.md`, que é configuração e
-  precisa estar onde o Claude Code o encontra
+- ❌ nunca na raiz — exceto `README.md`, `AGENTS.md` e `CLAUDE.md`, que são
+  configuração e precisam estar onde Codex e Claude Code as encontram
 
 ---
 

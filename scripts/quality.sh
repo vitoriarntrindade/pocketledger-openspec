@@ -56,27 +56,9 @@ gate() {
 }
 
 # --- secret scan -----------------------------------------------------------
-# Deliberately narrow: it looks for credential material in tracked files, and
-# it does not flag .env.example or test fixtures. Breadth here would produce
-# false positives, and a scanner people learn to ignore protects nothing.
+# Implemented in its own script so CI runs byte-for-byte the same check.
 scan_secrets() {
-  local hits=0 file
-  while IFS= read -r file; do
-    [[ -f "$file" ]] || continue
-    case "$file" in
-      .env.example|*/fixtures/*|tests/*|*.md|openspec/*) continue ;;
-    esac
-    if grep -qIE '(BEGIN [A-Z ]*PRIVATE KEY|aws_secret_access_key[[:space:]]*=|ghp_[A-Za-z0-9]{30,}|sk-[A-Za-z0-9]{30,})' "$file" 2>/dev/null; then
-      echo "  potential secret in: $file"
-      hits=1
-    fi
-  done < <(git ls-files)
-
-  if git ls-files --error-unmatch .env >/dev/null 2>&1; then
-    echo "  a real .env file is tracked by git"
-    hits=1
-  fi
-  [[ "$hits" -eq 0 ]]
+  scripts/scan-secrets.sh
 }
 
 run_tests() {

@@ -577,7 +577,7 @@ TEST_DATABASE_URL="postgresql+psycopg://pocketledger:pocketledger@localhost:5433
 
 ### O que está cobrito
 
-A suíte tem 66 testes, organizados por capacidade (mesma divisão usada nas especificações em `openspec/specs/`):
+A suíte tem 81 testes de aplicação, organizados por capacidade (mesma divisão usada nas especificações em `openspec/specs/`):
 
 | Arquivo | Foco |
 | --- | --- |
