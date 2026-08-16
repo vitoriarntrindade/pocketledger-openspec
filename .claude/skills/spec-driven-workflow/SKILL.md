@@ -10,7 +10,8 @@ This is the orchestration competence: given a request like *"add support for
 transfers between accounts"*, decide what process it needs, run that process,
 and know when to stop.
 
-`CLAUDE.md` states the rules. This skill is how you apply them.
+`AGENTS.md` states the rules for Codex and `CLAUDE.md` states them for Claude
+Code. This shared skill is how you apply them.
 
 ## 1. Classify first
 

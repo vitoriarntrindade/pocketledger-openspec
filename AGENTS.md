@@ -149,8 +149,8 @@ already decided.
 | `scripts/` | deterministic workflow tooling and guards |
 | `.claude/agents/` | specialised subagents and their model routing |
 | `.codex/agents/` | Codex subagent profiles and hook configuration |
-| `.agents/skills/` | Codex skills, loaded on demand |
-| `.claude/skills/` | Claude Code mirror of the shared skills |
+| `.claude/skills/` | canonical shared skills |
+| `.agents/skills/` | Codex link to the canonical shared skills |
 | `docs/agentic-development.md` | how this whole workflow fits together |
 
 ## Commands
@@ -165,12 +165,11 @@ make db          start PostgreSQL and create the test database
 
 ## Cross-LLM skills
 
-Codex loads project skills from `.agents/skills/`; Claude Code loads their
-counterparts from `.claude/skills/`. Shared skill files stay byte-identical.
-The documented exceptions are the constitution pointer in
-`spec-driven-workflow/SKILL.md` (`AGENTS.md` for Codex and `CLAUDE.md` for
-Claude Code) and the `source-command-opsx-*` compatibility wrappers, which
-exist only under `.agents/skills/`. The infrastructure test enforces this
-contract, so a new difference must be intentional, documented and tested.
+Claude Code owns the one canonical tree at `.claude/skills/`. Codex loads that
+same tree through the relative `.agents/skills` symbolic link, so editing a
+shared skill changes it for both runtimes exactly once. The workflow skill
+names the appropriate constitution at runtime: `AGENTS.md` for Codex and
+`CLAUDE.md` for Claude Code. The infrastructure test requires the link and
+rejects a copied Codex skill tree.
 Codex's agent profiles and hooks are versioned under `.codex/`; Claude Code's
 equivalents remain under `.claude/agents/` and `.claude/settings.json`.

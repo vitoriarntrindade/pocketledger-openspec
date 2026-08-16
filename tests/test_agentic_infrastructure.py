@@ -1404,44 +1404,16 @@ def test_agents_declare_cost_proportional_models():
 def test_cross_llm_skill_roots_are_compatible() -> None:
     """The two supported agents must share one reviewed workflow.
 
-    Codex has six command-compatibility wrappers unavailable to Claude Code.
-    The workflow skill itself names the agent-native constitution. Everything
-    else is deliberately identical, so this test turns a second copy from a
-    convention into an enforceable compatibility contract.
+    Codex receives the canonical Claude Code skill tree through a relative
+    symbolic link. A copied tree adds perpetual maintenance work and permits
+    drift before a test can detect it.
     """
-    codex_root = REPO_ROOT / ".agents" / "skills"
     claude_root = REPO_ROOT / ".claude" / "skills"
-    codex_files = {
-        path.relative_to(codex_root)
-        for path in codex_root.rglob("*")
-        if path.is_file()
-    }
-    claude_files = {
-        path.relative_to(claude_root)
-        for path in claude_root.rglob("*")
-        if path.is_file()
-    }
-    codex_only = {
-        pathlib.Path(f"source-command-opsx-{action}") / "SKILL.md"
-        for action in (
-            "apply",
-            "archive",
-            "explore",
-            "propose",
-            "sync",
-            "update",
-        )
-    }
-    assert codex_files - claude_files == codex_only
-    assert claude_files - codex_files == set()
-
-    allowed_difference = pathlib.Path("spec-driven-workflow/SKILL.md")
-    for relative_path in codex_files & claude_files:
-        if relative_path == allowed_difference:
-            continue
-        assert (codex_root / relative_path).read_bytes() == (
-            claude_root / relative_path
-        ).read_bytes(), f"skill roots diverged at {relative_path}"
+    codex_root = REPO_ROOT / ".agents" / "skills"
+    assert codex_root.is_symlink()
+    assert codex_root.readlink() == pathlib.Path("../.claude/skills")
+    assert codex_root.resolve() == claude_root.resolve()
+    assert not list((REPO_ROOT / ".agents").glob("source-command-opsx-*"))
 
     assert (REPO_ROOT / "AGENTS.md").is_file()
     assert (REPO_ROOT / "CLAUDE.md").is_file()

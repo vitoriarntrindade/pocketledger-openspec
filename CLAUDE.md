@@ -149,8 +149,8 @@ already decided.
 | `scripts/` | deterministic workflow tooling and guards |
 | `.claude/agents/` | specialised subagents and their model routing |
 | `.codex/agents/` | Codex subagent profiles and hook configuration |
-| `.agents/skills/` | Codex skills, loaded on demand |
-| `.claude/skills/` | Claude Code mirror of the shared skills |
+| `.claude/skills/` | canonical shared skills |
+| `.agents/skills/` | Codex link to the canonical shared skills |
 | `docs/agentic-development.md` | how this whole workflow fits together |
 
 ## Commands
