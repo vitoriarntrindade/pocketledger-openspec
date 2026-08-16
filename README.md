@@ -75,11 +75,11 @@ flowchart LR
 
 | Componente | Responsabilidade |
 | --- | --- |
-| **Routers** (`app/routers/`) | Tradução HTTP ↔ Python: recebem o request, validam o payload via schemas Pydantic e delegam a regra de negócio à camada de serviço. Não contêm lógica de negócio. |
-| **Services** (`app/services/`) | Onde vivem as regras de negócio: validações cruzadas (ex.: tipo da transação vs. tipo da categoria), isolamento por usuário, cálculo do resumo financeiro. Levantam exceções de domínio (`app/errors.py`) em vez de retornar códigos HTTP diretamente. |
+| **Routers** (`app/api/routers/`) | Tradução HTTP ↔ Python: recebem o request, validam o payload via schemas Pydantic e delegam a regra de negócio à camada de serviço. Não contêm lógica de negócio. |
+| **Services** (`app/services/`) | Onde vivem as regras de negócio: validações cruzadas (ex.: tipo da transação vs. tipo da categoria), isolamento por usuário, cálculo do resumo financeiro. Levantam exceções de domínio (`app/core/errors.py`) em vez de retornar códigos HTTP diretamente. |
 | **Models** (`app/models/`) | Entidades SQLAlchemy 2.x (`User`, `Category`, `Transaction`) e o enum compartilhado `TransactionType`. |
-| **RequestIdMiddleware** (`app/middleware.py`) | Gera ou propaga o `request_id`, mede a duração da requisição, emite o log de acesso estruturado e — de forma central — captura qualquer exceção não tratada, convertendo-a em uma resposta 500 consistente. |
-| **Exception handlers** (`app/error_handlers.py`) | Convertem exceções de domínio (`NotFoundError`, `ConflictError`, `ValidationError`, `UnauthorizedError`) e erros de validação do Pydantic em um envelope de erro JSON padronizado. |
+| **RequestIdMiddleware** (`app/api/middleware.py`) | Gera ou propaga o `request_id`, mede a duração da requisição, emite o log de acesso estruturado e — de forma central — captura qualquer exceção não tratada, convertendo-a em uma resposta 500 consistente. |
+| **Exception handlers** (`app/api/error_handlers.py`) | Convertem exceções de domínio (`NotFoundError`, `ConflictError`, `ValidationError`, `UnauthorizedError`) e erros de validação do Pydantic em um envelope de erro JSON padronizado. |
 | **PostgreSQL** | Fonte da verdade dos dados, com as regras de integridade (unicidade, chaves estrangeiras, `ON DELETE RESTRICT`) reforçadas no próprio schema, não apenas na aplicação. |
 | **Jaeger** | Recebe os traces exportados via OTLP e permite visualizar o caminho completo de uma requisição, incluindo as consultas ao banco. |
 | **`/metrics`** | Endpoint no formato de exposição do Prometheus, com métricas HTTP (via `prometheus-fastapi-instrumentator`) e contadores de negócio customizados. |

@@ -10,10 +10,12 @@ A árvore de diretórios, a responsabilidade de cada pacote da aplicação e a s
 .
 ├── app/
 │   ├── main.py                         # ponto de entrada e composição da aplicação FastAPI
+│   ├── context.py                      # contexto da requisição (request_id) via contextvars
 │   │
 │   ├── api/
 │   │   ├── deps.py                     # dependências da API, como autenticação do usuário
 │   │   ├── middleware.py               # middleware de request ID, logging de acesso e tratamento de falhas
+│   │   ├── error_handlers.py           # tradução das exceções de domínio no envelope de erro JSON
 │   │   └── routers/                    # endpoints HTTP organizados por recurso/capacidade
 │   │       ├── auth.py
 │   │       ├── categories.py
