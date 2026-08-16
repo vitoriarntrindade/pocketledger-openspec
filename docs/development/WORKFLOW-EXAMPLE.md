@@ -1,5 +1,22 @@
 # Exemplo: Workflow de Desenvolvimento Padronizado
 
+> [!IMPORTANT]
+> **Superseded — read [`docs/agentic-development.md`](../agentic-development.md) first.**
+>
+> This document was written against a pipeline that was never installed. It
+> refers to commands and layouts that do not work as described:
+>
+> - `make check` had no `Makefile` behind it; the gate is now `make quality`.
+> - ruff, mypy, flake8 and pre-commit were documented but not installed.
+> - `.claude/claude.md` was lowercase and so was likely never loaded; the
+>   project constitution is now `CLAUDE.md` in the repository root.
+> - `openspec/changes/active/` is not a layout OpenSpec 1.8 recognises; changes
+>   live directly under `openspec/changes/<name>/`.
+> - flake8 and pydocstyle have been retired; ruff is the single authority.
+>
+> It is kept for its background and reasoning, which remain useful. Where it
+> disagrees with `CLAUDE.md` or `docs/agentic-development.md`, those win.
+
 Este documento mostra, passo-a-passo, como seria desenvolver uma nova feature usando o novo workflow padronizado.
 
 ## Cenário: Implementar Audit Logging
@@ -12,17 +29,10 @@ Imagine que você quer adicionar audit logging detalhado para rastrear todas as 
 
 ```bash
 # Opção A: Interativa (recomendada)
-bash .claude/scripts/new-change.sh
+openspec new change audit-logging
 
 # Output:
-# === Criar Nova Mudança ===
-# Tipo de mudança:
-#   1. feature    - Nova funcionalidade
-#   ...
-# Escolha (1-7): 1
-# Slug (ex: audit-logging): audit-logging
-# 
-# ✓ Diretório criado: openspec/changes/active/2026-08-15-feature-audit-logging
+# ✓ Diretório criado: openspec/changes/2026-08-15-feature-audit-logging
 # ✓ Criado: proposal.md
 # ✓ Criado: design.md
 # ✓ Criado: tasks.md
@@ -33,7 +43,7 @@ bash .claude/scripts/new-change.sh
 
 ## 2. Documentação Inicial (Proposal)
 
-Editar `openspec/changes/active/2026-08-15-feature-audit-logging/proposal.md`:
+Editar `openspec/changes/2026-08-15-feature-audit-logging/proposal.md`:
 
 ```markdown
 # Feature: Audit Logging
@@ -78,7 +88,7 @@ Em um endpoint especial `/api/v1/audit-log` (apenas admin).
 
 ## 3. Especificação Técnica (Design)
 
-Editar `openspec/changes/active/2026-08-15-feature-audit-logging/design.md`:
+Editar `openspec/changes/2026-08-15-feature-audit-logging/design.md`:
 
 ```markdown
 # Design — Audit Logging
@@ -158,7 +168,7 @@ GET /api/v1/audit-log
 
 ## 4. Plano de Trabalho (Tasks)
 
-Editar `openspec/changes/active/2026-08-15-feature-audit-logging/tasks.md`:
+Editar `openspec/changes/2026-08-15-feature-audit-logging/tasks.md`:
 
 ```markdown
 # Plano de Tarefas — Audit Logging
@@ -260,8 +270,8 @@ git add README.md
 git commit -m "docs: document audit logging feature"
 
 # 11. Marcar tasks como completas em tasks.md
-nano openspec/changes/active/2026-08-15-feature-audit-logging/tasks.md
-git add openspec/changes/active/2026-08-15-feature-audit-logging/
+nano openspec/changes/2026-08-15-feature-audit-logging/tasks.md
+git add openspec/changes/2026-08-15-feature-audit-logging/
 git commit -m "update: audit logging tasks completed"
 ```
 
@@ -281,11 +291,11 @@ docker compose run --rm app-test pytest -v
 # ========================== 96 passed in 45.23s ==========================
 
 # Verificar que documentação está ok
-head -20 openspec/changes/active/2026-08-15-feature-audit-logging/proposal.md
-head -20 openspec/changes/active/2026-08-15-feature-audit-logging/design.md
+head -20 openspec/changes/2026-08-15-feature-audit-logging/proposal.md
+head -20 openspec/changes/2026-08-15-feature-audit-logging/design.md
 
 # Verificar que tasks estão completas
-grep "- \[x\]" openspec/changes/active/2026-08-15-feature-audit-logging/tasks.md | wc -l
+grep "- \[x\]" openspec/changes/2026-08-15-feature-audit-logging/tasks.md | wc -l
 # Output: 12 (todas as tarefas marcadas)
 ```
 
@@ -300,7 +310,7 @@ git push origin feature/audit-logging
 # Criar PR em draft
 gh pr create --draft \
   --title "Feature: Audit logging" \
-  --body "$(cat openspec/changes/active/2026-08-15-feature-audit-logging/proposal.md)"
+  --body "$(cat openspec/changes/2026-08-15-feature-audit-logging/proposal.md)"
 
 # Output:
 # Creating pull request for feature/audit-logging into main in anthropics/pocketledger
@@ -360,9 +370,8 @@ gh pr merge 123 --squash
 ## 10. Arquivar a Mudança
 
 ```bash
-# Mover de active para archive
-mv openspec/changes/active/2026-08-15-feature-audit-logging \
-   openspec/changes/archive/2026-08-15-feature-audit-logging
+# Arquivar a mudança e atualizar as specs principais
+openspec archive 2026-08-15-feature-audit-logging
 
 # Commit e push
 git add openspec/changes/archive/
@@ -427,10 +436,10 @@ git log --oneline | grep audit
 
 ## Próxima Feature?
 
-Repita o processo para a próxima mudança. O template e o script estão lá, esperando por você.
+Repita o processo para a próxima mudança. O template está lá, esperando por você.
 
 ```bash
-bash .claude/scripts/new-change.sh
+openspec new change caching-summary
 # → tipo: feature
 # → slug: caching-summary
 # → Branch: feature/caching-summary

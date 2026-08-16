@@ -1,5 +1,25 @@
 # 🚀 START HERE — PocketLedger
 
+> [!IMPORTANT]
+> **Parcialmente superseded — leia [`agentic-development.md`](agentic-development.md)
+> e a constituição do agente em uso primeiro: [`AGENTS.md`](../AGENTS.md) no
+> Codex ou [`CLAUDE.md`](../CLAUDE.md) no Claude Code.**
+>
+> Este documento é o ponto de entrada, mas foi escrito contra um pipeline que
+> nunca existiu. Concretamente:
+>
+> - `openspec new change <nome>   # ou a skill /spec-driven-workflow` — **o script foi removido**. Ele
+>   gravava em `openspec/changes/active/`, um layout que o OpenSpec 1.8 não
+>   reconhece, então as changes que criava eram invisíveis para a CLI. Use
+>   `openspec new change <nome>` ou a skill `spec-driven-workflow`.
+> - `openspec/changes/active/` — não existe. Changes ficam em
+>   `openspec/changes/<nome>/`.
+> - `.claude/change-types.yaml` — removido; a taxonomia de tipos está nas
+>   constituições `AGENTS.md` e `CLAUDE.md`, §2 e §4.
+> - `make check` — agora existe de verdade, como alias de `make quality`.
+>
+> A orientação geral sobre o projeto continua válida.
+
 Bem-vindo ao PocketLedger! Este arquivo te orienta para os próximos passos.
 
 ## ⚡ 2 Minutos para Começar
@@ -23,15 +43,15 @@ Você vai aprender: Como criar features, fazer commits, abrir PRs, arquivar muda
 ### 3. Começar Sua Primeira Feature
 
 ```bash
-bash .claude/scripts/new-change.sh
+git checkout -b <tipo>/<slug>
+openspec new change <nome>   # ou a skill /spec-driven-workflow
 ```
 
 Você vai:
 - Escolher o tipo (feature, bugfix, security, etc)
 - Digite um slug (nome-descritivo)
 - Criará automaticamente:
-  - Diretório: `openspec/changes/active/DATE-TYPE-slug/`
-  - Branch git: `type/slug`
+  - Diretório: `openspec/changes/DATE-TYPE-slug/`
   - Templates: `proposal.md`, `design.md`, `tasks.md`
 
 ---
@@ -56,23 +76,26 @@ docs/
 
 ## 🛠️ Ferramentas Disponíveis
 
-### Script de Bootstrap
+### Bootstrap de Mudanca
 
 ```bash
-bash .claude/scripts/new-change.sh
+git checkout -b <tipo>/<slug>
+openspec new change <nome>   # ou a skill /spec-driven-workflow
 ```
 
-Cria estrutura para uma nova mudança interativamente.
+Cria a estrutura de uma nova mudanca; a branch deve existir antes do primeiro
+edit.
 
-### Claude Code Skill
+### Skill de Workflow
 
 ```
-/new-development-change
+/spec-driven-workflow
 ```
 
-Invoke no Claude Code para criar mudança via skill.
+No Codex, siga `AGENTS.md`; no Claude Code, siga `CLAUDE.md`. Ambos usam a
+skill `spec-driven-workflow` em seus diretórios nativos.
 
-### Templates Reutilizáveis
+### Templates do Claude Code
 
 ```
 .claude/templates/
@@ -80,6 +103,9 @@ Invoke no Claude Code para criar mudança via skill.
 ├── change-design.md      # Template de design
 └── change-tasks.md       # Template de tarefas
 ```
+
+O Codex usa os artefatos criados pelo OpenSpec; nao precisa de uma copia desses
+templates.
 
 ---
 
@@ -104,13 +130,13 @@ cat openspec/changes/archive/2026-08-14-security-jwt-hardening/tasks.md
 ## 🔄 Workflow em 7 Passos
 
 ```
-1. Criar      → bash .claude/scripts/new-change.sh
+1. Criar      → git checkout -b <tipo>/<slug>; openspec new change <nome>
 2. Documentar → Editar proposal.md, design.md, tasks.md
 3. Implementar → Código + git commits
-4. Testar     → docker compose run --rm app-test pytest -v
-5. Revisar    → gh pr create --draft
-6. Aprovar    → gh pr ready + merge
-7. Arquivar   → mv active/ → archive/
+4. Testar     → make test
+5. Revisar    → verificação independente e relatório de conformidade
+6. Aprovar    → aceite humano explícito; só então push e pull request
+7. Arquivar   → openspec archive <nome>
 ```
 
 ---
@@ -144,7 +170,7 @@ cat docs/development/WORKFLOW-QUICK-START.md
 ### Opção 2: Começar Direto
 
 ```bash
-bash .claude/scripts/new-change.sh
+openspec new change <nome>   # ou a skill /spec-driven-workflow
 # → tipo: feature
 # → slug: sua-feature-name
 ```
@@ -164,7 +190,7 @@ Passo-a-passo completo de como seria.
 ```
 pocketledger-openspec/
 ├── README.md                      ← Visão geral
-├── START-HERE.md                  ← Este arquivo
+├── docs/START-HERE.md             ← Este arquivo
 ├── .env.example
 ├── Dockerfile
 ├── docker-compose.yml
@@ -180,16 +206,19 @@ pocketledger-openspec/
 ├── app/                           ← 💻 CÓDIGO
 ├── tests/                         ← ✅ TESTES
 │
-├── .claude/                       ← 🤖 AUTOMAÇÃO
+├── .claude/                       ← 🤖 CLAUDE CODE
 │   ├── templates/
 │   ├── scripts/
 │   ├── skills/
-│   └── change-types.yaml
+│   └── settings.json
+│
+├── .agents/                       ← 🤖 CODEX SKILLS
+├── .codex/                        ← 🤖 CODEX AGENTS E HOOKS
 │
 └── openspec/                      ← 📋 ARTEFATOS
     ├── specs/
     └── changes/
-        ├── active/
+        ├── <nome>/
         └── archive/
 ```
 
@@ -211,11 +240,11 @@ pocketledger-openspec/
 | Situação | Ir Para |
 |----------|---------|
 | Entender projeto | [README.md](README.md) |
-| Começar feature | [WORKFLOW-QUICK-START.md](docs/development/WORKFLOW-QUICK-START.md) |
-| Ver exemplo | [WORKFLOW-EXAMPLE.md](docs/development/WORKFLOW-EXAMPLE.md) |
-| Entender segurança | [SECURITY.md](docs/security/SECURITY.md) |
-| Setup inicial | [SETUP-WORKFLOW.md](docs/development/SETUP-WORKFLOW.md) |
-| Todas as docs | [docs/README.md](docs/README.md) |
+| Começar feature | [WORKFLOW-QUICK-START.md](development/WORKFLOW-QUICK-START.md) |
+| Ver exemplo | [WORKFLOW-EXAMPLE.md](development/WORKFLOW-EXAMPLE.md) |
+| Entender segurança | [SECURITY.md](security/SECURITY.md) |
+| Setup inicial | [SETUP-WORKFLOW.md](development/SETUP-WORKFLOW.md) |
+| Todas as docs | [docs/README.md](README.md) |
 
 ---
 
@@ -224,7 +253,7 @@ pocketledger-openspec/
 Escolha um:
 
 1. **Ler** — `cat docs/development/WORKFLOW-QUICK-START.md`
-2. **Começar** — `bash .claude/scripts/new-change.sh`
+2. **Começar** — crie a branch e execute `openspec new change <nome>`
 3. **Explorar** — `ls openspec/changes/archive/`
 
 ---

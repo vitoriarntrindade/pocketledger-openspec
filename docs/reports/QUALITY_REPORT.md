@@ -1,8 +1,17 @@
 # Python Code Quality Report
 
+> [!NOTE]
+> **Resolvido.** Todos os achados abaixo (type mismatches, circular
+> imports, linhas longas, exception chaining) foram corrigidos pela change
+> `2026-08-15-refactor-python-quality-baseline` (commit `c5ab5bc`). `make
+> quality` roda limpo hoje. Este documento é mantido como registro histórico
+> do estado em 2026-08-13 — ver
+> [`standards/BEST_PRACTICES.md`](../standards/BEST_PRACTICES.md) para o
+> estado atual e os comandos corretos.
+
 **Data:** 2026-08-13  
 **Projeto:** pocketledger-openspec  
-**Status:** ⚠️ Requer correções
+**Status:** ⚠️ Requer correções (na época; ver nota acima)
 
 ---
 
@@ -155,31 +164,29 @@ class User:
 
 ✅ **Arquivos de Config Criados:**
 - `pyproject.toml` - Ruff, MyPy, Coverage
-- `.flake8` - Flake8 configuration
 - `.pre-commit-config.yaml` - Git hooks
 - `Makefile` - Comandos de build
 
+(Na época este relatório também listava um `.flake8`; o arquivo foi removido
+desde então — ruff é a autoridade única de lint.)
+
 ---
 
-## 📋 Comandos Úteis
+## 📋 Comandos Úteis (atuais)
 
 ```bash
-# Verificação completa
-source .venv/bin/activate
-make check
+# Verificação completa — a definição de pronto
+make quality
 
-# Auto-fix com Ruff
-ruff check app --fix
-ruff format app
+# Auto-fix, depois roda o gate completo
+make fix
 
-# Type checking
-mypy app --ignore-missing-imports
+# Type checking isolado
+make typecheck
 
-# Apenas PEP 8
-flake8 app tests
-
-# Pre-commit setup
-pre-commit install
+# Pre-commit setup (só dano irreversível: segredos, arquivos
+# grandes, conflitos de merge, .env real — não lint/type checking)
+make install
 pre-commit run --all-files
 ```
 
@@ -206,4 +213,5 @@ pre-commit run --all-files
 
 ---
 
-**Relatório Completo:** Ver `quality-report.txt` para detalhes técnicos.
+**Relatório Completo:** este arquivo é o relatório; não há um
+`quality-report.txt` técnico separado.

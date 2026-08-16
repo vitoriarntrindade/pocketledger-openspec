@@ -1,17 +1,34 @@
 # Quick Start — Standardized Development Workflow
 
+> [!IMPORTANT]
+> **Superseded — read [`docs/agentic-development.md`](../agentic-development.md) first.**
+>
+> This document was written against a pipeline that was never installed. It
+> refers to commands and layouts that do not work as described:
+>
+> - `make check` had no `Makefile` behind it; the gate is now `make quality`.
+> - ruff, mypy, flake8 and pre-commit were documented but not installed.
+> - `.claude/claude.md` was lowercase and so was likely never loaded; the
+>   project constitution is now `CLAUDE.md` in the repository root.
+> - `openspec/changes/active/` is not a layout OpenSpec 1.8 recognises; changes
+>   live directly under `openspec/changes/<name>/`.
+> - flake8 and pydocstyle have been retired; ruff is the single authority.
+>
+> It is kept for its background and reasoning, which remain useful. Where it
+> disagrees with `CLAUDE.md` or `docs/agentic-development.md`, those win.
+
 ## TL;DR
 
 Para criar uma nova mudança, use:
 
 ```bash
-bash .claude/scripts/new-change.sh
+openspec new change <nome>
 ```
 
 Ou invoque a skill do Claude Code:
 
 ```
-/new-development-change
+/spec-driven-workflow
 ```
 
 ---
@@ -21,11 +38,11 @@ Ou invoque a skill do Claude Code:
 ### 1️⃣ **Criar Mudança**
 
 ```bash
-bash .claude/scripts/new-change.sh
+openspec new change <nome>
 # → Escolha tipo (feature, bugfix, security, etc)
 # → Digite slug (audit-logging, rate-limit-fix, etc)
 # → Branch criada: feature/audit-logging
-# → Diretório criado: openspec/changes/active/2026-08-15-feature-audit-logging/
+# → Diretório criado: openspec/changes/2026-08-15-feature-audit-logging/
 # → Templates copiados: proposal.md, design.md, tasks.md
 ```
 
@@ -70,7 +87,7 @@ Atualizar `tasks.md`: marque itens como ✓ enquanto completa
 git push origin feature/audit-logging
 gh pr create --draft \
   --title "Feature: Audit logging" \
-  --body "$(cat openspec/changes/active/2026-08-15-feature-audit-logging/proposal.md)"
+  --body "$(cat openspec/changes/2026-08-15-feature-audit-logging/proposal.md)"
 ```
 
 **Importante:** Comece em DRAFT. Apenas converta para "ready for review" quando você (ou seu time) aprovar as mudanças.
@@ -84,8 +101,7 @@ gh pr merge --squash
 ### 8️⃣ **Arquivar** (1 min)
 
 ```bash
-mv openspec/changes/active/2026-08-15-feature-audit-logging \
-   openspec/changes/archive/2026-08-15-feature-audit-logging
+openspec archive 2026-08-15-feature-audit-logging
 git add openspec/changes/archive/
 git commit -m "archive: feature-audit-logging"
 git push origin main
@@ -97,12 +113,11 @@ git push origin main
 
 ```
 openspec/changes/
-├── active/                           # Em andamento
-│   └── 2026-08-15-feature-audit-logging/
-│       ├── proposal.md               # "Por quê?"
-│       ├── design.md                 # "Como?"
-│       ├── tasks.md                  # "O quê?"
-│       └── specs/                    # (Opcional)
+├── 2026-08-15-feature-audit-logging/  # Em andamento
+│   ├── proposal.md               # "Por quê?"
+│   ├── design.md                 # "Como?"
+│   ├── tasks.md                  # "O quê?"
+│   └── specs/                    # (Opcional)
 │
 └── archive/                          # Finalizadas
     └── 2026-08-14-security-jwt-hardening/
@@ -118,12 +133,12 @@ openspec/changes/
 
 | Item | Localização | Descrição |
 |------|------------|----------|
-| Script de bootstrap | `.claude/scripts/new-change.sh` | Cria dir, copia templates, inicia branch |
+| Bootstrap | `openspec new change <nome>` | Cria dir, copia templates, inicia branch |
 | Template: Proposal | `.claude/templates/change-proposal.md` | Motivação, escopo, requisitos |
 | Template: Design | `.claude/templates/change-design.md` | Decisões arquiteturais, APIs, infra |
 | Template: Tasks | `.claude/templates/change-tasks.md` | Checklist de trabalho |
-| Tipos definidos | `.claude/change-types.yaml` | feature, bugfix, security, refactor, perf, docs, chore |
-| Skill Claude | `.claude/skills/new-development-change/` | Invocar via `/new-development-change` |
+| Tipos definidos | `CLAUDE.md` §2 e §4 | feature, bugfix, security, refactor, perf, docs, chore |
+| Skill Claude | `.claude/skills/spec-driven-workflow/` | Invocar via `/spec-driven-workflow` |
 
 ---
 
@@ -227,7 +242,7 @@ Veja `openspec/changes/archive/2026-08-14-security-jwt-hardening/` para um exemp
 
 - **Workflow completo:** veja `DEVELOPMENT.md`
 - **Exemplo passo-a-passo:** veja `WORKFLOW-EXAMPLE.md`
-- **Tipos e convenções:** veja `.claude/change-types.yaml`
+- **Tipos e convenções:** veja `CLAUDE.md` §2 e §4
 
 ---
 
@@ -243,7 +258,7 @@ R: Sim! Crie branches separadas para cada mudança.
 R: Sim! Atualize `proposal.md`, `design.md`, etc. conforme necessário. Isso é normal.
 
 **P: Como descartar uma mudança inacabada?**
-R: Delete o diretório em `openspec/changes/active/` e a branch. Sem história será preservada.
+R: Delete o diretório em `openspec/changes/<nome>/` e a branch. Sem história será preservada.
 
 **P: Preciso fazer PR em draft?**
 R: Sim! Comece em draft. Converta para "ready for review" quando tudo estiver pronto.
@@ -254,7 +269,7 @@ R: Sim! Comece em draft. Converta para "ready for review" quando tudo estiver pr
 
 ```bash
 # Pronto para começar?
-bash .claude/scripts/new-change.sh
+openspec new change <nome>
 ```
 
 Happy coding! 🚀

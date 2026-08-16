@@ -1,10 +1,29 @@
 # Workflow: Escrever Código "Limpo" desde o Início
 
+> [!IMPORTANT]
+> **Superseded — read [`docs/agentic-development.md`](../agentic-development.md) first.**
+>
+> This document was written against a pipeline that was never installed. It
+> refers to commands and layouts that do not work as described:
+>
+> - `make check` had no `Makefile` behind it; the gate is now `make quality`.
+> - ruff, mypy, flake8 and pre-commit were documented but not installed.
+> - `.claude/claude.md` was lowercase and so was likely never loaded; the
+>   project constitution is now `CLAUDE.md` in the repository root.
+> - `openspec/changes/active/` is not a layout OpenSpec 1.8 recognises; changes
+>   live directly under `openspec/changes/<name>/`.
+> - flake8 and pydocstyle have been retired; ruff is the single authority.
+>
+> It is kept for its background and reasoning, which remain useful. Where it
+> disagrees with `CLAUDE.md` or `docs/agentic-development.md`, those win.
+
 Este guia mostra como usar a skill `/python-best-practices` e templates durante o desenvolvimento, para que código **nasça** seguindo padrões de qualidade.
 
 ## 🎯 Princípios
 
-1. **Pre-commit Hooks** - Validam código antes de commitar
+1. **Pre-commit Hooks** - Bloqueiam dano irreversível antes de commitar
+   (segredos, arquivos grandes, `.env` real); lint e type checking rodam em
+   `make quality`, não aqui
 2. **Templates** - Estrutura pronta com padrões corretos
 3. **Type Hints** - Obrigatório desde a escrita
 4. **Docstrings** - Documentação simultânea
@@ -68,28 +87,26 @@ def get_user_by_email(
     )
 ```
 
-### Passo 3: Antes de Commitar - Rodar Checks Locais
+### Passo 3: Antes de Commitar - Rodar o Gate Localmente
 
 ```bash
-source .venv/bin/activate
+make quality   # format, lint, typecheck, testes, coverage, security,
+                # secret scan, validação OpenSpec — a definição de pronto
 
-# Pre-commit faz isso automaticamente:
+# Pre-commit roda à parte, no git commit, e cobre só dano irreversível
+# (segredos, arquivos grandes, conflitos de merge, .env real)
 git add .
 git commit -m "feat: add new feature"
-
-# Se houver erros, pre-commit:
-# 1. Mostra os problemas
-# 2. Auto-formata (ruff)
-# 3. Deixa você revisar e re-adicionar
 ```
 
-### Passo 4: Se Pre-commit Bloqueou
+### Passo 4: Se `make quality` Falhou
 
 ```bash
-# Revisar erros
-git diff
+# Autofix seguro, depois roda o gate completo de novo
+make fix
 
-# Re-adicionar após correções
+# Revisar o que sobrou
+git diff
 git add .
 git commit -m "feat: add new feature"
 ```
@@ -97,10 +114,10 @@ git commit -m "feat: add new feature"
 ### Passo 5: Commit Sucesso ✓
 
 ```bash
-# Pre-commit passou = Código já está:
-# ✓ Formatado (78 chars, PEP 8)
+# make quality passou = código já está:
+# ✓ Formatado (78 chars, PEP 8, ruff format)
 # ✓ Tipado (mypy aceita)
-# ✓ Sem issues (ruff/flake8 pass)
+# ✓ Sem issues (ruff check pass)
 # ✓ Documentado (docstrings presentes)
 
 git push origin feature/add-new-feature
@@ -108,23 +125,24 @@ git push origin feature/add-new-feature
 
 ## 🛠️ Pre-commit Hooks - O Que Roda Automaticamente
 
-Quando você faz `git commit`, roda automaticamente:
+Quando você faz `git commit`, o `.pre-commit-config.yaml` deste projeto roda
+apenas checagens contra dano irreversível — não lint, não type checking:
 
 ```yaml
-1. ruff check --fix      # Formata + arruma issues
-2. ruff-format           # Formata código
-3. mypy                  # Type checking
-4. flake8                # PEP 8
-5. pydocstyle            # Docstrings
-6. trailing-whitespace   # Remove espaços extras
-7. check-ast             # Valida Python syntax
+1. detect-private-key      # Bloqueia chaves privadas commitadas
+2. check-added-large-files # Bloqueia arquivos grandes por engano
+3. check-merge-conflict    # Bloqueia marcadores de conflito não resolvidos
+4. no-real-env-file        # Bloqueia um .env real sendo commitado
 ```
+
+Ruff e mypy já rodam a cada edição do agente e de novo em `make quality` e na
+CI; repeti-los no commit só tornaria o commit lento o bastante para as
+pessoas caírem no `--no-verify`.
 
 **Se algo falhar:**
 - ❌ Commit bloqueado
-- 📝 Mostra problemas
-- 🔧 Algumas coisas já são corrigidas (ruff)
-- ⏸️ Você revisa e re-tenta
+- 📝 Mostra o problema
+- ⏸️ Você corrige e re-tenta
 
 ## 📋 Exemplo Prático: Adicionar Novo Router
 
@@ -148,14 +166,11 @@ from app.schemas.post import PostCreate, PostOut, PostUpdate
 ### 3. Testar antes de commitar
 
 ```bash
-source .venv/bin/activate
-
 # Type checking
 mypy app/api/routers/posts.py
 
-# Linting
+# Linting (ruff é a autoridade única — substitui o flake8)
 ruff check app/api/routers/posts.py
-flake8 app/api/routers/posts.py
 ```
 
 ### 4. Commitar
@@ -172,11 +187,10 @@ git commit -m "feat: add posts endpoint
 ### 5. Pre-commit valida e aceita
 
 ```
-✓ ruff check
-✓ ruff-format  
-✓ mypy
-✓ flake8
-✓ pydocstyle
+✓ detect-private-key
+✓ check-added-large-files
+✓ check-merge-conflict
+✓ no-real-env-file
 ✓ All checks passed!
 
 [feature/add-posts 1a2b3c4] feat: add posts endpoint
@@ -188,13 +202,13 @@ git commit -m "feat: add posts endpoint
 Antes de pull request, rodar:
 
 ```bash
-# Tudo junto
-make check
+# Tudo junto — a definição de pronto
+make quality
 
 # Ou individual
-make lint        # ruff + flake8
-make type-check  # mypy
-make test        # pytest
+make lint        # ruff
+make typecheck    # mypy
+make test         # pytest, sobe o PostgreSQL antes
 ```
 
 ## 📚 Recursos Disponíveis
@@ -204,9 +218,8 @@ make test        # pytest
 | `BEST_PRACTICES.md` | Padrões + exemplos |
 | `.claude/templates/router.py.template` | Template router |
 | `.claude/templates/service.py.template` | Template service |
-| `pyproject.toml` | Configuração (ruff, mypy) |
-| `.flake8` | Configuração (flake8) |
-| `.pre-commit-config.yaml` | Git hooks |
+| `pyproject.toml` | Configuração (ruff — autoridade única de lint — e mypy) |
+| `.pre-commit-config.yaml` | Git hooks (só dano irreversível) |
 
 ## ⚡ Quick Reference
 

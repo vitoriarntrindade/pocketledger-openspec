@@ -1,111 +1,42 @@
-# Example .pre-commit-config.yaml
-# Copy to your project root as .pre-commit-config.yaml
-# Install with: pip install pre-commit && pre-commit install
+# Irreversibility layer.
+#
+# This file exists for exactly one reason: some damage cannot be undone after a
+# commit lands. A secret written into git history stays in the history even
+# after CI rejects the push — removing it means rewriting history. So it has to
+# be stopped at commit time, by something that binds any committer.
+#
+# That is the only jurisdiction this layer holds, and the whole design rests on
+# keeping it that way:
+#
+#   Claude Code hooks  bind the agent, before the action runs  -> formatting, dangerous commands
+#   pre-commit         binds any committer, at commit time     -> irreversible harm only
+#   make quality       binds the change, before it is done     -> the full gate
+#   CI                 binds the remote, before merge          -> the full gate again
+#
+# Linting and formatting are deliberately NOT here. Ruff already runs on every
+# file Claude edits (PostToolUse hook), on the whole project in `make quality`,
+# and again in CI. A fourth copy would only make committing slow enough that
+# people start reaching for --no-verify, which costs more than it protects.
+#
+# Install with: pre-commit install
 
 repos:
-  # Ruff - Python linter and formatter (replaces flake8, black, isort, etc.)
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.1.6  # Update to latest version
-    hooks:
-      # Linting
-      - id: ruff
-        name: Ruff lint
-        args:
-          - --fix
-          - --max-line-length=78
-        stages: [commit]
-
-      # Formatting
-      - id: ruff-format
-        name: Ruff format
-        stages: [commit]
-
-  # MyPy - Python type checker
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.5.1  # Update to latest version
-    hooks:
-      - id: mypy
-        name: MyPy type check
-        language: python
-        types: [python]
-        require_serial: true
-        additional_dependencies:
-          - "types-all"
-          - "types-requests"
-          - "types-PyYAML"
-        args:
-          - --ignore-missing-imports
-          - --warn-redundant-casts
-          - --warn-unused-ignores
-        stages: [commit]
-
-  # Flake8 - Traditional linter (comprehensive checks)
-  - repo: https://github.com/PyCQA/flake8
-    rev: 6.1.0  # Update to latest version
-    hooks:
-      - id: flake8
-        name: Flake8 lint
-        args:
-          - --max-line-length=78
-          - --max-complexity=10
-        additional_dependencies:
-          - flake8-bugbear
-          - flake8-comprehensions
-          - flake8-simplify
-        stages: [commit]
-
-  # Trailing whitespace
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.4.0  # Update to latest version
+    rev: v6.0.0
     hooks:
-      - id: trailing-whitespace
-        name: Trim trailing whitespace
-        stages: [commit]
-
-      - id: end-of-file-fixer
-        name: Fix end of file
-        stages: [commit]
-
-      - id: check-yaml
-        name: Check YAML
-        stages: [commit]
-
-      - id: check-json
-        name: Check JSON
-        stages: [commit]
-
-      - id: check-merge-conflict
-        name: Check for merge conflicts
-        stages: [commit]
-
       - id: detect-private-key
-        name: Detect private keys
-        stages: [commit]
+        name: block committed private keys
+      - id: check-added-large-files
+        name: block accidentally committed large files
+      - id: check-merge-conflict
+        name: block unresolved merge conflict markers
 
-      - id: check-ast
-        name: Check Python AST
-        stages: [commit]
-
-  # PyDocStyle - Docstring style checker
-  - repo: https://github.com/PyCQA/pydocstyle
-    rev: 6.3.0  # Update to latest version
+  - repo: local
     hooks:
-      - id: pydocstyle
-        name: PyDocStyle check
-        args:
-          - --convention=google
-        stages: [commit]
-
-# Configuration for all hooks
-default_language_version:
-  python: python3.8
-
-# Only run on Python files
-files: \.py$
-exclude: ^(\.venv|venv|build|dist|\.eggs)
-
-# Stages to run: commit, push, manual
-default_stages: [commit]
-
-# Fail if any hook fails
-fail_fast: false
+      - id: no-real-env-file
+        name: block committing a real .env file
+        entry: >-
+          A real .env file must never be committed. Put the variable names in
+          .env.example instead, with placeholder values.
+        language: fail
+        files: ^\.env$

@@ -5,8 +5,13 @@ Um backend de controle financeiro pessoal construído com **FastAPI**, **Postgre
 O projeto nasceu como um exercício prático de **Spec-Driven Development (SDD)** usando o [OpenSpec](https://github.com) — toda a especificação, o design técnico e o plano de implementação que originaram este código estão preservados em `openspec/` (veja a seção [OpenSpec e o processo de especificação](#-openspec-e-o-processo-de-especificação)).
 
 > 📚 **Documentação completa** em [`/docs`](./docs/README.md)  
-> 🚀 **Começar a desenvolver**: [`docs/development/WORKFLOW-QUICK-START.md`](./docs/development/WORKFLOW-QUICK-START.md)  
+> 🚀 **Começar a desenvolver**: [`docs/agentic-development.md`](./docs/agentic-development.md) — gates de qualidade, ciclo de vida de uma mudança e desenvolvimento autônomo  
+> 📜 **Regras do projeto**: [`CLAUDE.md`](./CLAUDE.md)  
 > 🔐 **Segurança**: [`docs/security/SECURITY.md`](./docs/security/SECURITY.md)
+
+> **Definition of done:** `make quality` — formatação, lint, tipagem, testes,
+> cobertura ≥ 95%, varredura de segredos, scan de segurança e validação
+> OpenSpec. É o mesmo comando que roda localmente e na CI.
 
 ---
 
@@ -572,7 +577,7 @@ TEST_DATABASE_URL="postgresql+psycopg://pocketledger:pocketledger@localhost:5433
 
 ### O que está cobrito
 
-A suíte tem 66 testes, organizados por capacidade (mesma divisão usada nas especificações em `openspec/specs/`):
+A suíte tem 81 testes de aplicação, organizados por capacidade (mesma divisão usada nas especificações em `openspec/specs/`):
 
 | Arquivo | Foco |
 | --- | --- |
@@ -588,7 +593,6 @@ A suíte tem 66 testes, organizados por capacidade (mesma divisão usada nas esp
 
 ---
 
-## 📁 Estrutura do projeto
 ## 📁 Estrutura do projeto
 
 ```text

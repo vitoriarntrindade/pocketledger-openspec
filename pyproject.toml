@@ -1,35 +1,58 @@
-# Example pyproject.toml configuration for Python best practices
-
 [build-system]
 requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "your-project"
+name = "pocketledger"
 version = "0.1.0"
-description = "Your project description"
-requires-python = ">=3.8"
+description = "Personal finance backend API with per-user data isolation and full observability"
+requires-python = ">=3.12"
 dependencies = [
-    "fastapi>=0.100.0",
-    "sqlalchemy>=2.0.0",
-    "pydantic>=2.0.0",
+    "fastapi>=0.115.6",
+    "uvicorn[standard]>=0.32.1",
+    "sqlalchemy>=2.0.36",
+    "alembic>=1.14.0",
+    "psycopg[binary]>=3.2.3",
+    "pydantic>=2.10.3",
+    "pydantic-settings>=2.6.1",
+    "email-validator>=2.2.0",
+    "pyjwt>=2.10.1",
+    "bcrypt>=4.2.1",
+    "prometheus-fastapi-instrumentator>=7.0.0",
+    "opentelemetry-sdk>=1.29.0",
 ]
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=7.0",
-    "pytest-cov>=4.0",
-    "ruff>=0.0.275",
-    "mypy>=1.4",
-    "flake8>=6.0",
-    "black>=23.0",
-    "pre-commit>=3.0",
+    "pytest>=8.3.4",
+    "pytest-cov>=6.0",
+    "httpx>=0.28.1",
+    "ruff>=0.16",
+    "mypy>=1.14",
+    "bandit[toml]>=1.8",
+    "pip-audit>=2.7",
+    "pre-commit>=4.0",
 ]
 
-# Ruff Configuration
+[tool.setuptools.packages.find]
+include = ["app*"]
+
+# ---------------------------------------------------------------------------
+# Ruff - the single linting and formatting authority for this project.
+# It replaces flake8 (C901 covers the complexity check flake8 provided) and
+# black. There is deliberately no second linter configuration file.
+# ---------------------------------------------------------------------------
 [tool.ruff]
 line-length = 78
-target-version = "py38"
+target-version = "py312"
+extend-exclude = [
+    ".venv",
+    "alembic/versions",
+    # Skill reference material is documentation that happens to be Python.
+    # Linting teaching examples against production rules produces noise and
+    # would force edits to a document to satisfy a code checker.
+    ".claude/skills/**/references",
+]
 
 [tool.ruff.lint]
 select = [
@@ -43,6 +66,7 @@ select = [
     "B",      # flake8-bugbear
     "A",      # flake8-builtins
     "C4",     # flake8-comprehensions
+    "C90",    # mccabe complexity (replaces flake8 max-complexity)
     "DTZ",    # flake8-datetimez
     "T10",    # flake8-debugger
     "ISC",    # flake8-implicit-str-concat
@@ -50,6 +74,7 @@ select = [
     "RSE",    # flake8-raise
     "RET",    # flake8-return
     "SIM",    # flake8-simplify
+    "S",      # flake8-bandit
     "PERF",   # perflint
     "FURB",   # refurb
     "LOG",    # flake8-logging
@@ -57,24 +82,69 @@ select = [
 ]
 
 ignore = [
-    "E501",   # line too long (handled by line-length)
+    "E501",   # line length is enforced by the formatter, not the linter
 ]
 
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
 [tool.ruff.lint.isort]
-known-first-party = ["app", "src"]
-known-third-party = [
-    "fastapi",
-    "sqlalchemy",
-    "pydantic",
-]
+known-first-party = ["app"]
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401", "F403"]
-"tests/*" = ["F401", "F811"]
+# Tests assert against literals, use fixtures that shadow names, and legitimately
+# contain credential-shaped strings that are not real secrets.
+# S603/S607: the workflow-guard tests must run the guards and the SessionStart
+# hook as real processes, with git resolved from PATH and script paths built
+# from a pytest temporary directory. That is the same deliberate choice already
+# granted to scripts/* below, and the inputs are test literals, not user data.
+"tests/*" = [
+    "F401",
+    "F811",
+    "S101",
+    "S105",
+    "S106",
+    "S107",
+    "S603",
+    "S607",
+]
+# B008: FastAPI's dependency injection idiom is a function call in an argument
+#   default, so this rule fires on every correctly written endpoint.
+# A002: `type` is part of the public query-string contract for transactions.
+#   Renaming the parameter to satisfy the linter would be a breaking API
+#   change. The service layer uses `type_` internally, so the shadowing is
+#   confined to the HTTP boundary where the name is required.
+"app/api/**" = ["B008", "A002"]
+# S105 flags any assignment whose name contains "secret" or "token". Both
+# occurrences here are false positives: `jwt_secret` holds a placeholder that
+# `assert_production_ready` refuses to start with outside development, and
+# `token_type = "bearer"` is the OAuth token-type literal, not a credential.
+"app/core/config.py" = ["S105"]
+"app/schemas/auth.py" = ["S105"]
+# UP042 suggests enum.StrEnum. That is not a safe swap here: StrEnum changes
+# __str__ from "TransactionType.income" to "income", which is observable
+# through serialisation and formatting. Making that change belongs in a
+# change that can specify and test the new behaviour, not in one whose
+# stated goal is to alter no behaviour at all.
+"app/models/enums.py" = ["UP042"]
+# BLE001: the readiness probe catches broadly on purpose. Any failure at all
+# means the instance cannot serve traffic, and a 503 is more useful to an
+# orchestrator than letting a driver or configuration error escape as a 500.
+# The exception is turned into the response, not swallowed.
+"app/api/routers/health.py" = ["BLE001"]
+# Workflow tooling resolves git and docker from PATH on purpose: hard-coding
+# absolute binary paths would break across machines and CI images.
+"scripts/*" = ["S603", "S607"]
 
-# MyPy Configuration
+[tool.ruff.format]
+docstring-code-format = true
+
+# ---------------------------------------------------------------------------
+# MyPy
+# ---------------------------------------------------------------------------
 [tool.mypy]
-python_version = "3.8"
+python_version = "3.12"
 warn_return_any = true
 warn_unused_configs = true
 warn_redundant_casts = true
@@ -82,35 +152,48 @@ warn_unused_ignores = true
 warn_no_return = true
 strict_optional = true
 strict_equality = true
-disallow_untyped_defs = false  # Set to true for strict mode
+disallow_untyped_defs = false
+exclude = ["^alembic/versions/", "^\\.venv/"]
 
 [[tool.mypy.overrides]]
 module = "tests.*"
 ignore_errors = true
 
-[[tool.mypy.overrides]]
-module = [
-    "setuptools.*",
-    "distutils.*",
-]
-ignore_missing_imports = true
+# ---------------------------------------------------------------------------
+# Pytest
+#
+# Coverage flags are deliberately NOT in addopts: that would make every
+# single-test run compute coverage and fail the 95% floor. The floor is
+# enforced by [tool.coverage.report] whenever coverage actually runs, which
+# is in `make quality` and in CI.
+# ---------------------------------------------------------------------------
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --strict-markers"
+filterwarnings = ["ignore::DeprecationWarning"]
 
-# PyDocStyle Configuration
-[tool.pydocstyle]
-convention = "google"
-add-ignore = ["D100", "D104"]  # Ignore missing module/package docstring
-match = "(?!test_).*\\.py"
-
-# Coverage Configuration
+# ---------------------------------------------------------------------------
+# Coverage
+# ---------------------------------------------------------------------------
 [tool.coverage.run]
-source = ["src", "app"]
+source = ["app"]
 branch = true
+omit = ["alembic/*"]
 
 [tool.coverage.report]
+fail_under = 95
+show_missing = true
 exclude_lines = [
     "pragma: no cover",
     "def __repr__",
     "raise AssertionError",
     "raise NotImplementedError",
     "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
 ]
+
+# ---------------------------------------------------------------------------
+# Bandit - security scan over application code only.
+# ---------------------------------------------------------------------------
+[tool.bandit]
+exclude_dirs = [".venv", "tests", "alembic"]

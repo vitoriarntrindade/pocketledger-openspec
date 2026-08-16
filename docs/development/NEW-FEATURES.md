@@ -1,5 +1,22 @@
 # 🚀 Adicionando Novas Features com Código "Limpo"
 
+> [!IMPORTANT]
+> **Superseded — read [`docs/agentic-development.md`](../agentic-development.md) first.**
+>
+> This document was written against a pipeline that was never installed. It
+> refers to commands and layouts that do not work as described:
+>
+> - `make check` had no `Makefile` behind it; the gate is now `make quality`.
+> - ruff, mypy, flake8 and pre-commit were documented but not installed.
+> - `.claude/claude.md` was lowercase and so was likely never loaded; the
+>   project constitution is now `CLAUDE.md` in the repository root.
+> - `openspec/changes/active/` is not a layout OpenSpec 1.8 recognises; changes
+>   live directly under `openspec/changes/<name>/`.
+> - flake8 and pydocstyle have been retired; ruff is the single authority.
+>
+> It is kept for its background and reasoning, which remain useful. Where it
+> disagrees with `CLAUDE.md` or `docs/agentic-development.md`, those win.
+
 **Objetivo:** Código já nasça tipado, documentado, seguindo PEP 8 - sem refatoração depois.
 
 ## ⚡ Quick Start (5 minutos)
@@ -14,10 +31,10 @@ git checkout -b feature/your-feature-name
 
 ```bash
 # Para novo router (endpoint)
-./claude/scripts/generate-component.sh router your_feature
+.claude/scripts/generate-component.sh router your_feature
 
 # Para novo serviço (lógica)
-./claude/scripts/generate-component.sh service your_feature
+.claude/scripts/generate-component.sh service your_feature
 ```
 
 ### 3. Editar e Implementar
@@ -33,16 +50,16 @@ O template já vem com:
 ```bash
 git add .
 git commit -m "feat: add your feature"
-# Pre-commit roda automaticamente:
-# ✓ Type checking (mypy)
-# ✓ Linting (ruff + flake8)
-# ✓ Formatting (automático)
-# ✓ Docstrings (pydocstyle)
+# Pre-commit roda automaticamente, mas só cobre dano irreversível
+# (segredos, arquivos grandes, .env real) — não lint nem type checking.
+
+# Antes de abrir o PR, rode o gate completo:
+make quality
 ```
 
 ### 5. Ready! ✓
 
-Código passa validação = pronto para production!
+`make quality` passou = pronto para production!
 
 ---
 
@@ -104,31 +121,31 @@ cp .claude/templates/router.py.template app/api/routers/new_router.py
 
 ### Pre-commit Hooks
 
-Cada commit roda automaticamente:
+Cada commit roda automaticamente, mas cobre só dano irreversível:
 
-1. **Ruff** - Formata + arruma problemas
-2. **MyPy** - Type checking
-3. **Flake8** - PEP 8
-4. **PyDocStyle** - Docstrings
+1. **detect-private-key** - Bloqueia chaves privadas
+2. **check-added-large-files** - Bloqueia arquivos grandes por engano
+3. **check-merge-conflict** - Bloqueia marcadores de conflito
+4. **no-real-env-file** - Bloqueia um `.env` real sendo commitado
+
+Lint, type checking e formatação **não** rodam aqui — já rodam a cada edição
+do agente, em `make quality`, e de novo na CI.
 
 **Se algo falhar:**
 - ⏸️ Commit bloqueado
-- 🔧 Ruff já corrige (formatting)
-- 📝 Você vê os problemas
+- 📝 Você vê o problema
 - 🔁 Depois de corrigir: `git commit` novamente
 
 ### Verificação Manual
 
 ```bash
-source .venv/bin/activate
-
-# Check tudo
-make check
+# Tudo junto — a definição de pronto
+make quality
 
 # Ou individual
-make lint           # ruff + flake8
-make type-check     # mypy
-make test           # pytest
+make lint           # ruff
+make typecheck      # mypy
+make test           # pytest, sobe o PostgreSQL antes
 ```
 
 ---
@@ -147,7 +164,7 @@ make test           # pytest
 ## 🎯 Checklist: Nova Feature
 
 - [ ] Criar branch: `git checkout -b feature/...`
-- [ ] Usar template: `./claude/scripts/generate-component.sh ...`
+- [ ] Usar template: `.claude/scripts/generate-component.sh ...`
 - [ ] Type hints em **tudo**
 - [ ] Docstrings (Google style)
 - [ ] Max 78 caracteres por linha
