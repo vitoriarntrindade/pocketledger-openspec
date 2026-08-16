@@ -47,21 +47,40 @@ recurring cost.
 **Consequence.** Formatting lands as its own commit, containing no logic
 change. Every other commit here can then be read on its own.
 
-### Decision: narrow the blind exception rather than suppress the warning
+### Decision: remove the blind exception handler entirely
 
-`_current_trace_id` currently wraps its body in `except Exception: pass`. Both
-ruff (BLE001) and bandit (B110) flag it, and they are right: if OpenTelemetry
-ever raises something unexpected, the failure disappears with no trace.
+`_current_trace_id` wrapped its body in `except Exception: pass`. Both ruff
+(BLE001) and bandit (B110) flagged it, and they were right: if OpenTelemetry
+ever raised, the failure disappeared with no trace.
 
-The suppression route — `# noqa: BLE001` plus a bandit exclusion — would clear
-both reports while leaving the actual problem in place. Instead the handler
-catches the specific error the call can raise and records the failure at debug
-level, so it stays non-fatal but stops being invisible.
+**Alternatives considered.** Suppressing both warnings with `# noqa` and a
+bandit exclusion would clear the reports while leaving the problem in place.
+Narrowing the catch and logging the failure at debug level was the plan this
+document originally recorded — but it does not survive contact with where this
+function runs. `_current_trace_id` is called from a logging filter, so logging
+inside its own error path risks recursion, and there is no other channel to
+report through.
 
-**Trade-off.** A narrower catch could let a genuinely unexpected exception
-propagate into a log-formatting path. That is the correct outcome: a tracing
-lookup failing in a way nobody anticipated is information, and losing it is how
-observability code silently stops working.
+**What was actually built.** The handler is gone, and the previously
+function-local `from opentelemetry import trace` moved to module scope. The
+OpenTelemetry API returns an invalid span rather than raising when no provider
+is configured, so the case the guard existed for does not occur; checking
+`span_context.is_valid` covers it directly.
+
+**Trade-off, stated plainly.** This is the one place in this change where
+behaviour changes, so the "no behaviour changes" claim in the proposal is
+qualified rather than absolute:
+
+- an unexpected OpenTelemetry failure now propagates out of the logging filter
+  instead of being silently converted to `None`;
+- `app/core/logging.py` now fails at import time if `opentelemetry` is absent,
+  where previously it degraded quietly.
+
+Both are acceptable, and arguably the point. OpenTelemetry is a hard
+dependency in `requirements.txt`, not an optional one, so an import failure is
+a broken installation that should be loud. And an observability component that
+hides its own failures is the specific way observability silently stops
+working — the behaviour being removed is the defect, not a feature.
 
 ### Decision: keep the readiness probe's broad catch, and scope the rule instead
 

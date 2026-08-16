@@ -11,8 +11,12 @@ def _validate_amount(value: Decimal) -> Decimal:
         raise ValueError("amount must be greater than zero")
     # Decimal.as_tuple().exponent is an int for finite values but the string
     # 'n', 'N' or 'F' for NaN, sNaN and Infinity, which cannot be compared to
-    # an int. Guarding on the type is what makes the comparison sound; a
-    # non-finite amount is already rejected by the check above.
+    # an int. Guarding on the type is what makes the comparison sound.
+    #
+    # Non-finite values do not reach here through the API: pydantic rejects
+    # them when coercing the field to Decimal. They are not caught by the
+    # check above either — Decimal("Infinity") <= 0 is False — so this guard
+    # is what stops a direct call from raising TypeError.
     exponent = value.as_tuple().exponent
     if isinstance(exponent, int) and exponent < -2:
         raise ValueError("amount must not have more than 2 decimal places")

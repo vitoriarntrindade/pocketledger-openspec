@@ -7,8 +7,11 @@
 
 ## 2. Lint violations
 
-- [x] 2.1 Narrow the blind exception handler in `app/core/logging.py` and make its
-      failure visible at debug level, resolving both BLE001 and bandit B110
+- [x] 2.1 Remove the blind exception handler in `app/core/logging.py`, resolving
+      both BLE001 and bandit B110. Narrowing it and logging at debug level was
+      the original plan; it was abandoned because the function runs inside a
+      logging filter, where logging its own failure risks recursion. See the
+      design decision for the behaviour this changes.
 - [x] 2.2 Fix the remaining lint violations at their cause, without suppression
       comments or widened ignore lists
 - [x] 2.3 Confirm `ruff check .` is clean

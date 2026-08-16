@@ -35,7 +35,17 @@ done cannot actually be met and the gate has no teeth.
   configuration, so it tests the code rather than the environment.
 - The bandit B110 finding is resolved by the same exception-handling fix.
 
-No behaviour changes. Every existing test must still pass, unchanged in intent.
+Every existing test still passes, unchanged in intent, and no endpoint, schema,
+model or service behaviour changes.
+
+**One deliberate exception to that**, in `app/core/logging.py`: removing the
+blind exception handler means an unexpected OpenTelemetry failure now
+propagates out of the logging filter instead of being silently swallowed, and
+the module now fails at import if `opentelemetry` is missing rather than
+degrading quietly. Both are intended — hiding its own failures is precisely how
+observability code stops working unnoticed, and OpenTelemetry is a hard
+dependency, so its absence is a broken installation. The reasoning, and the
+narrower fix that was tried first and abandoned, are recorded in `design.md`.
 
 ## Capabilities
 
