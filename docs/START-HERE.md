@@ -1,24 +1,10 @@
 # 🚀 START HERE — PocketLedger
 
 > [!IMPORTANT]
-> **Parcialmente superseded — leia [`agentic-development.md`](agentic-development.md)
-> e a constituição do agente em uso primeiro: [`AGENTS.md`](../AGENTS.md) no
-> Codex ou [`CLAUDE.md`](../CLAUDE.md) no Claude Code.**
->
-> Este documento é o ponto de entrada, mas foi escrito contra um pipeline que
-> nunca existiu. Concretamente:
->
-> - `openspec new change <nome>   # ou a skill /spec-driven-workflow` — **o script foi removido**. Ele
->   gravava em `openspec/changes/active/`, um layout que o OpenSpec 1.8 não
->   reconhece, então as changes que criava eram invisíveis para a CLI. Use
->   `openspec new change <nome>` ou a skill `spec-driven-workflow`.
-> - `openspec/changes/active/` — não existe. Changes ficam em
->   `openspec/changes/<nome>/`.
-> - `.claude/change-types.yaml` — removido; a taxonomia de tipos está nas
->   constituições `AGENTS.md` e `CLAUDE.md`, §2 e §4.
-> - `make check` — agora existe de verdade, como alias de `make quality`.
->
-> A orientação geral sobre o projeto continua válida.
+> Leia primeiro [`agentic-development.md`](agentic-development.md) e a
+> constituição do agente em uso: [`AGENTS.md`](../AGENTS.md) no Codex ou
+> [`CLAUDE.md`](../CLAUDE.md) no Claude Code. Ambos executam o mesmo gate e
+> carregam a mesma árvore de skills versionada.
 
 Bem-vindo ao PocketLedger! Este arquivo te orienta para os próximos passos.
 
@@ -38,7 +24,8 @@ Você vai saber: O que é PocketLedger, como funciona, arquitetura, stack tecnol
 cat docs/development/WORKFLOW-QUICK-START.md
 ```
 
-Você vai aprender: Como criar features, fazer commits, abrir PRs, arquivar mudanças.
+Você vai aprender: Como criar features, fazer commits, verificar e arquivar
+mudanças.
 
 ### 3. Começar Sua Primeira Feature
 
@@ -93,7 +80,8 @@ edit.
 ```
 
 No Codex, siga `AGENTS.md`; no Claude Code, siga `CLAUDE.md`. Ambos usam a
-skill `spec-driven-workflow` em seus diretórios nativos.
+mesma skill `spec-driven-workflow`: `.agents/skills` aponta para a fonte
+canônica `.claude/skills`.
 
 ### Templates do Claude Code
 
@@ -104,8 +92,9 @@ skill `spec-driven-workflow` em seus diretórios nativos.
 └── change-tasks.md       # Template de tarefas
 ```
 
-O Codex usa os artefatos criados pelo OpenSpec; nao precisa de uma copia desses
-templates.
+O OpenSpec cria os artefatos de mudança para ambos os runtimes. As templates
+acima são um recurso específico do Claude Code, não uma segunda fonte de
+skills.
 
 ---
 

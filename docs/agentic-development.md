@@ -130,14 +130,14 @@ correct, and that belief is what makes self-verification worthless.
 
 ### Cross-LLM skills
 
-The project versions the shared skills twice so either coding agent has the
-same workflow: Codex reads `.agents/skills/`, while Claude Code reads
-`.claude/skills/`. Shared files must remain byte-identical. Two differences
-are intentional: `spec-driven-workflow/SKILL.md` points to `AGENTS.md` for
-Codex and `CLAUDE.md` for Claude Code, and the six `source-command-opsx-*`
-compatibility wrappers exist only for Codex. The infrastructure test makes any
-other difference a failure. Codex profiles and hook configuration are versioned
-under `.codex/`; Claude Code uses `.claude/agents/` and
+The project versions the shared skills once: Claude Code reads the canonical
+`.claude/skills/` tree and Codex reaches that exact tree through the relative
+`.agents/skills` symbolic link. A shared skill is therefore edited once and
+both runtimes receive it. The workflow skill tells each runtime which
+constitution to use (`AGENTS.md` for Codex and `CLAUDE.md` for Claude Code).
+The infrastructure test rejects a copied Codex skill tree. Codex profiles and
+hook configuration are versioned under `.codex/`; Claude Code uses
+`.claude/agents/` and
 `.claude/settings.json`. Both carry the same seven review roles and the
 workflow guards, so a clone can use either agent without personal setup.
 

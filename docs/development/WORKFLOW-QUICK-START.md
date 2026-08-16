@@ -1,21 +1,9 @@
 # Quick Start — Standardized Development Workflow
 
 > [!IMPORTANT]
-> **Superseded — read [`docs/agentic-development.md`](../agentic-development.md) first.**
->
-> This document was written against a pipeline that was never installed. It
-> refers to commands and layouts that do not work as described:
->
-> - `make check` had no `Makefile` behind it; the gate is now `make quality`.
-> - ruff, mypy, flake8 and pre-commit were documented but not installed.
-> - `.claude/claude.md` was lowercase and so was likely never loaded; the
->   project constitution is now `CLAUDE.md` in the repository root.
-> - `openspec/changes/active/` is not a layout OpenSpec 1.8 recognises; changes
->   live directly under `openspec/changes/<name>/`.
-> - flake8 and pydocstyle have been retired; ruff is the single authority.
->
-> It is kept for its background and reasoning, which remain useful. Where it
-> disagrees with `CLAUDE.md` or `docs/agentic-development.md`, those win.
+> Read [`docs/agentic-development.md`](../agentic-development.md) and the
+> applicable constitution first: `AGENTS.md` for Codex or `CLAUDE.md` for
+> Claude Code. Both runtimes use the same `make quality` gate and shared skills.
 
 ## TL;DR
 
@@ -25,7 +13,7 @@ Para criar uma nova mudança, use:
 openspec new change <nome>
 ```
 
-Ou invoque a skill do Claude Code:
+Ou invoque a skill compartilhada:
 
 ```
 /spec-driven-workflow
@@ -41,7 +29,6 @@ Ou invoque a skill do Claude Code:
 openspec new change <nome>
 # → Escolha tipo (feature, bugfix, security, etc)
 # → Digite slug (audit-logging, rate-limit-fix, etc)
-# → Branch criada: feature/audit-logging
 # → Diretório criado: openspec/changes/2026-08-15-feature-audit-logging/
 # → Templates copiados: proposal.md, design.md, tasks.md
 ```
@@ -74,37 +61,25 @@ git commit -m "feat: add audit middleware"
 ### 4️⃣ **Testar** (5 min)
 
 ```bash
-docker compose run --rm app-test pytest -v
+make quality
 ```
 
 ### 5️⃣ **Revisar** (5 min)
 
 Atualizar `tasks.md`: marque itens como ✓ enquanto completa
 
-### 6️⃣ **Abrir PR** (Draft) (2 min)
+### 6️⃣ **Aceite Humano**
 
-```bash
-git push origin feature/audit-logging
-gh pr create --draft \
-  --title "Feature: Audit logging" \
-  --body "$(cat openspec/changes/2026-08-15-feature-audit-logging/proposal.md)"
-```
+Produza o relatório de conformidade e aguarde aceite humano explícito. Antes
+disso, o agente não faz push nem abre pull request. Depois do aceite, o humano
+decide sobre publicação e merge.
 
-**Importante:** Comece em DRAFT. Apenas converta para "ready for review" quando você (ou seu time) aprovar as mudanças.
-
-### 7️⃣ **Mesclar** (1 min)
-
-```bash
-gh pr merge --squash
-```
-
-### 8️⃣ **Arquivar** (1 min)
+### 7️⃣ **Arquivar** (1 min)
 
 ```bash
 openspec archive 2026-08-15-feature-audit-logging
 git add openspec/changes/archive/
 git commit -m "archive: feature-audit-logging"
-git push origin main
 ```
 
 ---
@@ -133,12 +108,12 @@ openspec/changes/
 
 | Item | Localização | Descrição |
 |------|------------|----------|
-| Bootstrap | `openspec new change <nome>` | Cria dir, copia templates, inicia branch |
+| Bootstrap | `openspec new change <nome>` | Cria diretório e artefatos; crie a branch antes |
 | Template: Proposal | `.claude/templates/change-proposal.md` | Motivação, escopo, requisitos |
 | Template: Design | `.claude/templates/change-design.md` | Decisões arquiteturais, APIs, infra |
 | Template: Tasks | `.claude/templates/change-tasks.md` | Checklist de trabalho |
-| Tipos definidos | `CLAUDE.md` §2 e §4 | feature, bugfix, security, refactor, perf, docs, chore |
-| Skill Claude | `.claude/skills/spec-driven-workflow/` | Invocar via `/spec-driven-workflow` |
+| Tipos definidos | `AGENTS.md` / `CLAUDE.md` §2 e §4 | feature, bugfix, security, refactor, perf, docs, chore |
+| Skill compartilhada | `.claude/skills/spec-driven-workflow/` | Codex usa `.agents/skills -> ../.claude/skills`; invoque `/spec-driven-workflow` |
 
 ---
 
@@ -219,7 +194,7 @@ Antes de mesclar um PR:
 - [ ] `proposal.md` está claro e completo?
 - [ ] `design.md` explica todas as decisões?
 - [ ] `tasks.md` tem todos os itens marcados ✓?
-- [ ] Todos os testes passam? (`pytest -v`)
+- [ ] O gate passa? (`make quality`)
 - [ ] Nenhuma regressão em features existentes?
 - [ ] Documentação atualizada (README, SECURITY, etc)?
 - [ ] Commits têm bons prefixos (`feat:`, `fix:`, etc)?
@@ -242,14 +217,15 @@ Veja `openspec/changes/archive/2026-08-14-security-jwt-hardening/` para um exemp
 
 - **Workflow completo:** veja `DEVELOPMENT.md`
 - **Exemplo passo-a-passo:** veja `WORKFLOW-EXAMPLE.md`
-- **Tipos e convenções:** veja `CLAUDE.md` §2 e §4
+- **Tipos e convenções:** veja `AGENTS.md` ou `CLAUDE.md`, §2 e §4
 
 ---
 
 ## Perguntas Frequentes
 
 **P: E se for uma mudança muito pequena (typo)?**
-R: Mesmo typos ganham um `proposal.md` mínimo (1-2 linhas) para rastreabilidade.
+R: Siga a classificação TRIVIAL nas constituições; não é necessário criar uma
+mudança OpenSpec.
 
 **P: Posso fazer múltiplas features ao mesmo tempo?**
 R: Sim! Crie branches separadas para cada mudança.
@@ -261,7 +237,9 @@ R: Sim! Atualize `proposal.md`, `design.md`, etc. conforme necessário. Isso é 
 R: Delete o diretório em `openspec/changes/<nome>/` e a branch. Sem história será preservada.
 
 **P: Preciso fazer PR em draft?**
-R: Sim! Comece em draft. Converta para "ready for review" quando tudo estiver pronto.
+R: Não antes do aceite humano explícito. O agente produz o relatório de
+conformidade e para; a publicação e a abertura do PR acontecem somente depois
+do aceite.
 
 ---
 
