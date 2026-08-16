@@ -99,7 +99,7 @@
 - [x] 9.1 Run the full gate and record each result
 - [x] 9.2 Delegate independent verification of spec compliance to
       `spec-verifier`
-- [ ] 9.3 Produce the final compliance report and stop for human acceptance
+- [x] 9.3 Produce the final compliance report and stop for human acceptance
 - [x] 9.4 Open the follow-up change for the pre-existing quality debt —
       `openspec/changes/2026-08-15-refactor-python-quality-baseline/`, planned
       in `14abb3d`

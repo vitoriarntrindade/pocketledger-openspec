@@ -107,6 +107,8 @@ No runtime behaviour of the application changes.
   `scripts/scan-secrets.sh`, `scripts/session-context.sh`
 - `.github/workflows/quality.yml`
 - `tests/test_agentic_infrastructure.py` — behavioural tests for the guard hooks
+- `compliance-report.md` — final local verification evidence and accepted
+  residual risks
 
 **Modified**
 
